@@ -1,0 +1,57 @@
+@import "tailwindcss";
+@tailwind utilities;
+
+:root {
+  --primary: #2563eb; /* Blue */
+  --secondary: #4b5563; /* Gray */
+  --accent: #10b981; /* Green */
+  --background: #f9fafb; /* Light gray */
+  --text: #1f2937; /* Dark gray */
+}
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  @apply font-bold text-2xl;
+}
+
+button,
+a {
+  @apply transition duration-200 ease-in-out;
+}
+
+.container {
+  @apply mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl;
+}
+
+/* Custom card component */
+.card {
+  @apply bg-white rounded-lg shadow-md p-6;
+}
+
+/* Responsive table wrapper */
+.table-responsive {
+  @apply overflow-x-auto;
+}
