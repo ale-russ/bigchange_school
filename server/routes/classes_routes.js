@@ -45,7 +45,7 @@ router.get(
   }
 );
 
-// Create a class (admin - only )
+// Create a class (admin and teacher )
 router.post(
   "/",
   [authMiddleware, roleMiddleware(["admin", "teacher"])],
@@ -130,7 +130,9 @@ router.put(
   async (req, res, next) => {
     try {
       const { id } = req.params;
+      console.log("id: ", id);
       const { name, teacherId, studentIds, level } = req.body;
+      console.log("body: ", name, teacherId, studentIds, level);
 
       const teacher = await User.findOne({ _id: teacherId, role: "teacher" });
       if (!teacher)

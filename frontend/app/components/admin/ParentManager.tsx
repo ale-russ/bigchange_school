@@ -352,11 +352,15 @@ export default function ParentManager() {
               onChange={handleParentInputChange}
               className="mt-1 block w-full p-3 border rounded-md focus:ring-blue-500 focus:border-blue-500"
             >
-              {students.map((student) => (
-                <option key={student.id} value={student.id}>
-                  {student.name} ({student.phoneNumber || "No phone"})
-                </option>
-              ))}
+              {students
+                .filter((student) =>
+                  student.parentIds.includes(editParent?.id!)
+                )
+                .map((student) => (
+                  <option key={student.id} value={student.id}>
+                    {student.name} ({student.phoneNumber || "No phone number"})
+                  </option>
+                ))}
             </select>
           </div>
           <div className="flex justify-end space-x-2">

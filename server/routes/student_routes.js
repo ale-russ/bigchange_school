@@ -14,7 +14,7 @@ router.get(
   [authMiddleware, roleMiddleware(["admin"])],
   async (req, res, next) => {
     try {
-      const students = await Student.find().populate("class", "name");
+      const students = await Student.find().populate("classId", "name");
       const formattedStudents = students.map((student) => ({
         id: student._id.toString(),
         name: student.name,
@@ -23,6 +23,12 @@ router.get(
         class: student.classId
           ? { id: student.classId._id.toString, name: student.classId.name }
           : null,
+        level: student.level,
+        parentIds: student.parentIds.map((p) => p._id.toString()),
+        children: student.parentIds.map((p) => ({
+          id: p._id.toString(),
+          name: p.fullName,
+        })),
       }));
       res.status(200).json(formattedStudents);
     } catch (err) {
@@ -42,10 +48,10 @@ router.post(
       .isMobilePhone("any")
       .withMessage("Phone number is required"),
     body("address").isString().withMessage("Invalid Address"),
-    body("parentPhoneNumber")
-      .isMobilePhone("any")
-      .withMessage("Parent's Phone number is required"),
     body("level").optional().isString().withMessage("Invalid Level"),
+    body("parentIds")
+      .isArray({ min: 1 })
+      .withMessage("At least one parent ID is required"),
   ],
   async (req, res, next) => {
     try {
@@ -53,15 +59,8 @@ router.post(
       if (!errors.isEmpty())
         return res.status(400).json({ errors: errors.array });
 
-      const {
-        name,
-        phoneNumber,
-        address,
-        parentPhoneNumber,
-        classId,
-        parentIds,
-        level,
-      } = req.body;
+      const { name, phoneNumber, address, classId, parentIds, level } =
+        req.body;
 
       // Validate parentIds
       if (parentIds && parentIds.length > 0) {
@@ -87,11 +86,11 @@ router.post(
       }
 
       // Check for existing student with same phone number
-      const existingStudent = await User.findOne({ phoneNumber });
-      if (existingStudent)
-        return res.status(400).json({
-          message: "Student with this phone number is already registered",
-        });
+      // const existingStudent = await User.findOne({ phoneNumber });
+      // if (existingStudent)
+      //   return res.status(400).json({
+      //     message: "Student with this phone number is already registered",
+      //   });
 
       // Create Student
       const student = new Student({
@@ -102,6 +101,8 @@ router.post(
         parentIds,
         classId: classId || null,
       });
+
+      await student.save();
 
       // update parent record
       await Parent.updateMany(
@@ -116,12 +117,13 @@ router.post(
         });
 
       // Populate classId for response:
-      const populatedStudent = await Student.findById(student._id).populate(
-        "classId",
-        "name teacherId"
-      );
+      const populatedStudent = await Student.findById(student._id)
+        .populate("classId", "name teacherId")
+        .populate("parentIds", "fullname phoneNumber address");
+
+      console.log("populatedStudent: ", populatedStudent);
       const formattedStudent = {
-        if: populatedStudent._id.toString(),
+        id: populatedStudent._id.toString(),
         name: populatedStudent.name,
         phoneNumber: populatedStudent.phoneNumber,
         address: populatedStudent.address,
@@ -130,14 +132,19 @@ router.post(
           ? {
               id: populatedStudent.classId._id.toString(),
               name: populatedStudent.classId.name,
+              teacherId: populatedStudent.classId.teacherId,
             }
           : null,
-        parentIds: populatedStudent.parentIds.map((id) => id.toString()),
+        parentIds: populatedStudent.parentIds.map((p) => p._id.toString()),
+        children: populatedStudent.parentIds.map((p) => ({
+          id: p._id.toString(),
+          name: p.fullName,
+        })),
       };
       res.status(201).json(formattedStudent);
     } catch (err) {
       console.log("Error: ", err);
-      return res(500).json({ message: "Internal Server Error" });
+      return res.status(500).json({ message: "Internal Server Error" });
     }
   }
 );
@@ -154,7 +161,7 @@ router.put(
       .isMobilePhone("any")
       .withMessage("Invalid phone number"),
     body("address").notEmpty().withMessage("Address is required"),
-    body("grade").notEmpty().withMessage("Grade is required"),
+    body("level").optional().isString().withMessage("Level is required"),
     body("parentIds")
       .isArray({ min: 1 })
       .withMessage("At least one parent ID is required"),
@@ -167,17 +174,15 @@ router.put(
         return res.status(400).json({ errors: errors.array() });
 
       const { id } = req.params;
-      const { name, phoneNumber, address, grade, parentIds, classId } =
+      const { name, phoneNumber, address, level, parentIds, classId } =
         req.body;
 
       const student = await Student.findById(id);
 
       // Validate parentIds
-      if (parentIds && parentIds.length > 0) {
-        const parents = await Parent.find({ _id: { $in: parentIds } });
-        if (parents.length !== parentIds.length)
-          return res.status(400).json({ message: "Invalid parent IDs" });
-      }
+      const parents = await Parent.find({ _id: { $in: parentIds } });
+      if (parents.length !== parentIds.length)
+        return res.status(400).json({ message: "Invalid parent IDs" });
 
       // Validate classId and teacher permissions
       if (classId) {
@@ -194,30 +199,21 @@ router.put(
             .json({ message: "Not authorized to modify this class" });
       }
 
-      // Check for phone number uniqueness (if provided)
-      // const existingStudent = await Student.findOne({
-      //   phoneNumber,
-      //   _id: { $ne: id },
-      // });
-      // if (existingStudent)
-      //   return res.status(400).json({ message: "Phone number already in use" });
+      // Update class references
+      if (student.classId && student.classId.toString() !== classId) {
+        await Class.updateOne(
+          { _id: student.classId },
+          { $pull: { studentIds: student._id } }
+        );
+      }
+      if (classId && student.classId?.toString() !== classId) {
+        await Class.updateOne(
+          { _id: classId },
+          { $addToSet: { studentIds: student._id } }
+        );
+      }
 
-      await student.save();
-
-      // Update student
-      const oldClassId = student.classId;
-      student.set({
-        name,
-        phoneNumber,
-        address,
-        level,
-        parentIds,
-        classId: classId || null,
-        updatedAt: Date.now(),
-      });
-      await student.save();
-
-      // Update parent records
+      // Update parent references
       await Parent.updateMany(
         { childrenIds: student._id, _id: { $nin: parentIds } },
         { $pull: { childrenIds: student._id } }
@@ -227,35 +223,38 @@ router.put(
         { $addToSet: { childrenIds: student._id } }
       );
 
-      // Update class records
-      if (oldClassId && oldClassId.toString() !== classId)
-        await Class.findByIdAndUpdate(oldClassId, {
-          $pull: { studentIds: student._id },
-        });
+      student.set({
+        name,
+        phoneNumber,
+        address,
+        level,
+        classId,
+        parentIds,
+        updatedAt: Date.now(),
+      });
+      await student.save();
 
-      if (classId)
-        await Class.findByIdAndUpdate(classId, {
-          $addToSet: { studentIds: student._id },
-        });
+      const populatedStudent = await Student.findById(id)
+        .populate("classId", "name level teacherId")
+        .populate("parentIds", "fullName phoneNumber address");
 
-      // Populate classId for response
-      const populatedStudent = await Student.findById(student._id).populate(
-        "classId",
-        "name"
-      );
       const formattedStudent = {
         id: populatedStudent._id.toString(),
         name: populatedStudent.name,
         phoneNumber: populatedStudent.phoneNumber,
         address: populatedStudent.address,
-        level: populatedStudent.grade,
+        level: populatedStudent.level,
         class: populatedStudent.classId
           ? {
               id: populatedStudent.classId._id.toString(),
               name: populatedStudent.classId.name,
             }
           : null,
-        parentIds: populatedStudent.parentIds.map((id) => id.toString()),
+        parentIds: populatedStudent.parentIds.map((p) => p._id.toString()),
+        children: populatedStudent.parentIds.map((p) => ({
+          id: p._id.toString(),
+          name: p.fullName,
+        })),
       };
 
       res.status(200).json(formattedStudent);

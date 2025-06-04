@@ -30,23 +30,22 @@ export default function StudentManager() {
     phoneNumber: "",
     address: "",
     classId: "",
-    level:"",
-    parentIds:[] as string[],
+    level: "",
+    parentIds: [] as string[],
   });
 
   useEffect(() => {
-    console.log("session: ", session)
+    console.log("session: ", session);
     if (session?.accessToken) {
       fetchStudents();
       fetchClasses();
-      fetchParents()
+      fetchParents();
     }
   }, [session]);
 
   const fetchStudents = async () => {
     setLoading(true);
     try {
-     
       const response = await axios.get(
         `${process.env.NEXT_PUBLIC_SERVER_URL}/students`,
         {
@@ -63,7 +62,6 @@ export default function StudentManager() {
 
   const fetchClasses = async () => {
     try {
-  
       const response = await axios.get(
         `${process.env.NEXT_PUBLIC_SERVER_URL}/classes`,
         {
@@ -78,47 +76,42 @@ export default function StudentManager() {
 
   const fetchParents = async () => {
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_SERVER_URL}/parents`, {
-        headers: {Authorization: `Bearer ${session?.accessToken}`}
-      });
-      setParents(response.data)
-
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_SERVER_URL}/parents`,
+        {
+          headers: { Authorization: `Bearer ${session?.accessToken}` },
+        }
+      );
+      console.log("response: ", response.data);
+      setParents(response.data);
     } catch (err) {
       setError("Failed to fetch parents");
     }
-  }
+  };
 
-  const handleCreateStudent = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreateStudent = async (data: Partial<Student>) => {
     if (!session?.accessToken) {
       setFormError("Session not found");
       return;
     }
-
-    if(studentFormData.parentIds.length === 0){
+    console.log("parentId: ", data);
+    if (!data?.parentIds || data.parentIds?.length === 0) {
       setFormError("Please select at least one parent");
       return;
     }
+    console.log("data: ", data);
     try {
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_SERVER_URL}/students`,
-        { ...studentFormData},
+        data,
         { headers: { Authorization: `Bearer ${session.accessToken}` } }
       );
       setStudents([...students, response.data]);
       setCreateStudent(false);
-      setStudentFormData({
-        name: "",
-        address: "",
-        phoneNumber: "",
-        level:"",
-        classId: "",
-        parentIds: []
-      });
       setError("");
     } catch (err: any) {
       console.log("Error: ", err);
-      setFormError(err.response?.data?.message || "Failed To Create Student");
+      setFormError(err.response?.message || "Failed To Create Student");
     }
   };
 
@@ -130,13 +123,12 @@ export default function StudentManager() {
       address: student.address || "",
       level: "",
       classId: student.class?.id || "",
-      parentIds: student.parentIds || []
+      parentIds: student.parentIds || [],
     });
   };
 
   const handleUpdateStudent = async (data: Partial<Student>) => {
-    console.log("on handleUpdateStudent")
-    console.log('session in handleUpdateStudent: ', session?.accessToken)
+    console.log("on handleUpdateStudent", data);
     setLoading(true);
     if (!editStudent || !session?.accessToken) {
       setFormError("Session not found");
@@ -147,7 +139,7 @@ export default function StudentManager() {
     try {
       const response = await axios.put(
         `${process.env.NEXT_PUBLIC_SERVER_URL}/students/${editStudent.id}`,
-        studentFormData,
+        data,
         {
           headers: { Authorization: `Bearer ${session.accessToken}` },
         }
@@ -198,17 +190,16 @@ export default function StudentManager() {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    if(name === "parentIds") {
-      if(e.target instanceof HTMLSelectElement ){
+    if (name === "parentIds") {
+      if (e.target instanceof HTMLSelectElement) {
         const options = e.target.options;
         const selected: string[] = [];
-        for(let i = 0; i < options.length; i++) {
-          if(options[i].selected) selected.push(options[i].value)
-          }
-        setStudentFormData((prev) => ({...prev, parentIds: selected}))
+        for (let i = 0; i < options.length; i++) {
+          if (options[i].selected) selected.push(options[i].value);
+        }
+        setStudentFormData((prev) => ({ ...prev, parentIds: selected }));
       }
-    }else {
-
+    } else {
       setStudentFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
@@ -292,9 +283,9 @@ export default function StudentManager() {
                 </th>
                 <th className="p-3 text-left text-sm font-medium text-secondary">
                   Address
+                </th>
                 <th className="p-3 text-left text-sm font-medium text-secondary">
                   Level
-                </th>
                 </th>
                 <th className="p-3 text-left text-sm font-medium text-secondary">
                   Class
@@ -308,33 +299,38 @@ export default function StudentManager() {
               </tr>
             </thead>
             <tbody>
-              {filteredStudents.map((student) => (
-                <tr key={student.id} className="border-b hover:bg-gray-50">
-                  <td className="p-3">{student.name}</td>
-                  <td className="p-3">{student.phoneNumber || "N/A"}</td>
-                  <td className="p-3">{student.address || "N/A"}</td>
-                  <td className="p-3">{student.level || "N/A"}</td>
-                  <td className="p-3">{student.class?.name || "N/A"}</td>
-                  <td className="p-3">
-                    {student.parentIds.map((id) => parents.find((p) => p.id === id)?.fullName).filter(Boolean).join(", ") || "N/A"}
-
-                  </td>
-                  <td className="p-3">
-                    <button
-                      onClick={() => handleEditStudent(student)}
-                      className="text-primary hover:underline mr-2 hover:cursor-pointer"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => setDeleteStudentId(student.id)}
-                      className="text-red-600 hover:underline hover:cursor-pointer"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {filteredStudents.map((student) => {
+                console.log("student: ", student);
+                return (
+                  <tr key={student.id} className="border-b hover:bg-gray-50">
+                    <td className="p-3">{student.name}</td>
+                    <td className="p-3">{student.phoneNumber || "N/A"}</td>
+                    <td className="p-3">{student.address || "N/A"}</td>
+                    <td className="p-3">{student.level || "N/A"}</td>
+                    <td className="p-3">{student.class?.name || "N/A"}</td>
+                    <td className="p-3">
+                      {student.parentIds
+                        .map((id) => parents.find((p) => p.id === id)?.fullName)
+                        .filter(Boolean)
+                        .join(", ") || "N/A"}
+                    </td>
+                    <td className="p-3">
+                      <button
+                        onClick={() => handleEditStudent(student)}
+                        className="text-primary hover:underline mr-2 hover:cursor-pointer"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => setDeleteStudentId(student.id)}
+                        className="text-red-600 hover:underline hover:cursor-pointer"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -349,12 +345,15 @@ export default function StudentManager() {
         }}
         title="Add Student"
       >
-         <StudentForm
+        <StudentForm
           student={null}
           classes={classes}
           parents={parents}
-          onSubmit={async(data) => {
-            await handleCreateStudent({preventDefault: () => {}, ...data} as any)
+          onSubmit={async (data) => {
+            await handleCreateStudent({
+              preventDefault: () => {},
+              ...data,
+            } as any);
           }}
           onCancel={() => setCreateStudent(false)}
           error={formError}
@@ -376,11 +375,14 @@ export default function StudentManager() {
           classes={classes}
           onSubmit={handleUpdateStudent}
           onCancel={() => setEditStudent(null)}
-          error={formError} 
-          parents={[]} 
+          error={formError}
+          parents={parents?.filter((parent) =>
+            editStudent?.parentIds.includes(parent.id)
+          )}
           onParentCreated={function (newParent: Parent): void {
             throw new Error("Function not implemented.");
-          } }        />
+          }}
+        />
       </Modal>
 
       <Modal

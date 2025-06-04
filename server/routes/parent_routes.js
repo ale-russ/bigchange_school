@@ -4,7 +4,7 @@ const Parent = require("../models/ParentModel");
 const Student = require("../models/student_model");
 const authMiddleware = require("../middleware/authMiddleware");
 const roleMiddleware = require("../middleware/roleMiddleware");
-const { body } = require("express-validator");
+const { body, validationResult } = require("express-validator");
 
 const router = express.Router();
 
@@ -47,9 +47,16 @@ router.post(
       .notEmpty()
       .withMessage("Invalid Phone number"),
     body("address").notEmpty().withMessage("Address is required"),
+    body("childrenIds").isArray().withMessage("Children IDs must be an array"),
   ],
   async (req, res, next) => {
     try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res
+          .status(400)
+          .json({ errors: "Please fill in the required fields" });
+      }
       const { fullName, phoneNumber, childrenIds, address } = req.body;
 
       // Validate childrenIds
@@ -58,6 +65,13 @@ router.post(
         if (students.length !== childrenIds.length)
           return res.status(400).json({ message: "Invalid Student IDs" });
       }
+
+      // Check for existing parent with the same phone number
+      const existingParent = await Parent.findOne({ phoneNumber });
+      if (existingParent)
+        return res.status(400).json({
+          message: "Parent with this phone number is already registered",
+        });
 
       const parent = new Parent({
         fullName,
@@ -74,7 +88,22 @@ router.post(
           { $addToSet: { parentIds: parent._id } }
         );
       }
-      res.status(201).json(parent);
+
+      const populatedParent = await Parent.findById(parent._id).populate(
+        "childrenIds",
+        "name phoneNumber level class"
+      );
+
+      res.status(201).json({
+        id: populatedParent._id.toString(),
+        fullName: populatedParent.fullName,
+        phoneNumber: populatedParent.phoneNumber,
+        address: populatedParent.address,
+        children: populatedParent.childrenIds.map((child) => ({
+          id: child._id.toString(),
+          name: child.name,
+        })),
+      });
     } catch (err) {
       next(err);
     }
@@ -88,15 +117,17 @@ router.put(
     authMiddleware,
     roleMiddleware(["teacher", "admin"]),
     body("fullName").notEmpty().withMessage("Name is Required"),
-    body("phoneNumber")
-      .isMobilePhone()
-      .notEmpty()
-      .withMessage("Invalid Phone number"),
-    body("childrenIds").notEmpty().withMessage("Children Id is required"),
+    body("phoneNumber").isMobilePhone().withMessage("Invalid phone number"),
+    body("childrenIds").isArray().withMessage("Children ID is required"),
     body("address").notEmpty().withMessage("Address is required"),
   ],
   async (req, res, next) => {
     try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
       const { id } = req.params;
       const { fullName, phoneNumber, childrenIds, address } = req.body;
 
@@ -108,6 +139,16 @@ router.put(
         const students = await Student.find({ _id: { $in: childrenIds } });
         if (students.length !== childrenIds.length)
           return res.status(400).json({ message: "Invalid Student IDs" });
+
+        // Check for phone number uniqueness
+        const existingParent = await Parent.findOne({
+          phoneNumber,
+          _id: { $ne: id },
+        });
+        if (existingParent)
+          return res
+            .status(400)
+            .json({ message: "Phone number already in use" });
 
         // update parent
         parent.set({
@@ -121,25 +162,67 @@ router.put(
         await parent.save();
 
         // Update student record
-        if (childrenIds) {
-          // Remove parent from old student
-          await Student.updateMany(
-            {
-              parentIds: parent._id,
-              _id: { $nin: childrenIds },
-            },
-            { $pull: { parentIds: parent._id } }
-          );
-
-          // Add parent to new students
+        await Student.updateMany(
+          {
+            parentIds: parent._id,
+            _id: { $nin: childrenIds },
+          },
+          { $pull: { parentIds: parent._id } }
+        );
+        // Add parent to new students
+        if (childrenIds && childrenIds.length > 0) {
           await Student.updateMany(
             { _id: { $in: childrenIds } },
             { $addToSet: { parentIds: parent._id } }
           );
         }
 
-        res.json(parent);
+        const populatedParent = await Parent.findById(id).populate(
+          "childrenIds",
+          "name phoneNumber level classId address"
+        );
+
+        res.status(200).json({
+          id: populatedParent._id.toString(),
+          fullName: populatedParent.fullName,
+          phoneNumber: populatedParent.phoneNumber,
+          address: populatedParent.address,
+          children: populatedParent.childrenIds.map((child) => ({
+            id: child._id.toString(),
+            name: child.name,
+            phoneNumber: child.phoneNumber,
+            level: child.level,
+            classId: child.classId,
+            address: child.address,
+          })),
+        });
       }
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// Delete a parent (admin only)
+router.delete(
+  "/:id",
+  [authMiddleware, roleMiddleware(["admin"])],
+  async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const parent = await Parent.findById(id);
+      if (!parent) {
+        return res.status(404).json({ message: "Parent not found" });
+      }
+
+      // Remove parent from student records
+      await Student.updateMany(
+        { parentIds: parent._id },
+        { $pull: { parentIds: parent._id } }
+      );
+
+      await Parent.deleteOne({ _id: id });
+      res.status(200).json({ message: "Parent deleted successfully" });
     } catch (err) {
       next(err);
     }

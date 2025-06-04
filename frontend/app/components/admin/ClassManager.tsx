@@ -70,14 +70,14 @@ export default function ClassManager() {
   const fetchStudents = async () => {
     try {
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_SERVER_URL}/classes`,
+        `${process.env.NEXT_PUBLIC_SERVER_URL}/students`,
         {
           headers: { Authorization: `Bearer ${session?.accessToken}` },
         }
       );
       setStudents(response.data);
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed To Fetch Classes");
+      setError(err.response?.data?.message || "Failed To Fetch Students");
     }
   };
 
@@ -343,11 +343,14 @@ export default function ClassManager() {
               onChange={handleClassInputChange}
               className="mt-1 block w-full p-3 border rounded-md focus:ring-primary focus:border-primary"
             >
-              {students.map((student) => (
-                <option key={student.id} value={student.id}>
-                  {student.name} ({student.email})
-                </option>
-              ))}
+              {students.map((student) => {
+                console.log("student: ", student);
+                return (
+                  <option key={student.id} value={student.id}>
+                    {student.name} ({student.phoneNumber})
+                  </option>
+                );
+              })}
             </select>
           </div>
           <div className="flex justify-end space-x-2">

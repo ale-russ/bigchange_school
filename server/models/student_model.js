@@ -7,7 +7,7 @@ const studentSchema = new mongoose.Schema(
       require: true,
       trim: true,
     },
-    parentIds: { type: mongoose.Schema.Types.ObjectId, ref: "Parent" },
+    parentIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Parent" }],
     phoneNumber: {
       type: String,
       require: true,
@@ -23,7 +23,10 @@ const studentSchema = new mongoose.Schema(
       ref: "Class",
       default: null,
     },
-    level: { type: String, required: true },
+    level: {
+      type: String,
+      // required: true
+    },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
   },
