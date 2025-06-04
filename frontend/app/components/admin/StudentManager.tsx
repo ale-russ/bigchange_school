@@ -5,13 +5,14 @@ import { useSession } from "next-auth/react";
 import axios from "axios";
 import SearchBar from "../ui/SearchBar";
 import Modal from "../ui/Modal";
-import { Student, Class } from "@/types/auth";
+import { Student, Class, Parent } from "@/types/auth";
 import StudentForm from "./StudentForm";
 
 export default function StudentManager() {
   const { data: session } = useSession();
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
+  const [parents, setParents] = useState<Parent[]>([]);
 
   const [editStudent, setEditStudent] = useState<Student | null>(null);
   const [deleteStudentId, setDeleteStudentId] = useState<string | null>(null);
@@ -29,19 +30,23 @@ export default function StudentManager() {
     phoneNumber: "",
     address: "",
     classId: "",
+    level:"",
+    parentIds:[] as string[],
   });
 
   useEffect(() => {
+    console.log("session: ", session)
     if (session?.accessToken) {
       fetchStudents();
       fetchClasses();
+      fetchParents()
     }
   }, [session]);
 
   const fetchStudents = async () => {
     setLoading(true);
     try {
-      //   const response = await axios.get("http://localhost:5000/api/students", {
+     
       const response = await axios.get(
         `${process.env.NEXT_PUBLIC_SERVER_URL}/students`,
         {
@@ -58,7 +63,7 @@ export default function StudentManager() {
 
   const fetchClasses = async () => {
     try {
-      //   const response = await axios.get("http://localhost:5000/api/classes", {
+  
       const response = await axios.get(
         `${process.env.NEXT_PUBLIC_SERVER_URL}/classes`,
         {
@@ -71,6 +76,18 @@ export default function StudentManager() {
     }
   };
 
+  const fetchParents = async () => {
+    try {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_SERVER_URL}/parents`, {
+        headers: {Authorization: `Bearer ${session?.accessToken}`}
+      });
+      setParents(response.data)
+
+    } catch (err) {
+      setError("Failed to fetch parents");
+    }
+  }
+
   const handleCreateStudent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!session?.accessToken) {
@@ -78,10 +95,14 @@ export default function StudentManager() {
       return;
     }
 
+    if(studentFormData.parentIds.length === 0){
+      setFormError("Please select at least one parent");
+      return;
+    }
     try {
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_SERVER_URL}/students`,
-        { ...studentFormData, role: "student" },
+        { ...studentFormData},
         { headers: { Authorization: `Bearer ${session.accessToken}` } }
       );
       setStudents([...students, response.data]);
@@ -90,7 +111,9 @@ export default function StudentManager() {
         name: "",
         address: "",
         phoneNumber: "",
+        level:"",
         classId: "",
+        parentIds: []
       });
       setError("");
     } catch (err: any) {
@@ -105,11 +128,15 @@ export default function StudentManager() {
       name: student.name || "",
       phoneNumber: student.phoneNumber || "",
       address: student.address || "",
+      level: "",
       classId: student.class?.id || "",
+      parentIds: student.parentIds || []
     });
   };
 
   const handleUpdateStudent = async (data: Partial<Student>) => {
+    console.log("on handleUpdateStudent")
+    console.log('session in handleUpdateStudent: ', session?.accessToken)
     setLoading(true);
     if (!editStudent || !session?.accessToken) {
       setFormError("Session not found");
@@ -119,7 +146,6 @@ export default function StudentManager() {
 
     try {
       const response = await axios.put(
-        // `http://localhost:5000/api/students/${editStudent.id}`,
         `${process.env.NEXT_PUBLIC_SERVER_URL}/students/${editStudent.id}`,
         studentFormData,
         {
@@ -130,6 +156,14 @@ export default function StudentManager() {
         students.map((s) => (s.id === editStudent.id ? response.data : s))
       );
       setEditStudent(null);
+      setStudentFormData({
+        name: "",
+        phoneNumber: "",
+        address: "",
+        level: "",
+        classId: "",
+        parentIds: [],
+      });
       setFormError("");
       // await fetchClasses();
     } catch (err: any) {
@@ -145,7 +179,6 @@ export default function StudentManager() {
     if (!deleteStudentId || !session?.accessToken) return;
     try {
       await axios.delete(
-        // `http://localhost:5000/api/students/${deleteStudentId}`,
         `${process.env.NEXT_PUBLIC_NEXT_PUBLIC_SERVER_URL}/students/${deleteStudentId}`,
         {
           headers: { Authorization: `Bearer ${session.accessToken}` },
@@ -165,7 +198,23 @@ export default function StudentManager() {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setStudentFormData((prev) => ({ ...prev, [name]: value }));
+    if(name === "parentIds") {
+      if(e.target instanceof HTMLSelectElement ){
+        const options = e.target.options;
+        const selected: string[] = [];
+        for(let i = 0; i < options.length; i++) {
+          if(options[i].selected) selected.push(options[i].value)
+          }
+        setStudentFormData((prev) => ({...prev, parentIds: selected}))
+      }
+    }else {
+
+      setStudentFormData((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleParentCreated = (newParent: Parent) => {
+    setParents((prev) => [...prev, newParent]);
   };
 
   const filteredStudents = students.filter((student) => {
@@ -239,16 +288,19 @@ export default function StudentManager() {
                   Name
                 </th>
                 <th className="p-3 text-left text-sm font-medium text-secondary">
-                  Email
-                </th>
-                <th className="p-3 text-left text-sm font-medium text-secondary">
                   Phone
                 </th>
                 <th className="p-3 text-left text-sm font-medium text-secondary">
                   Address
+                <th className="p-3 text-left text-sm font-medium text-secondary">
+                  Level
+                </th>
                 </th>
                 <th className="p-3 text-left text-sm font-medium text-secondary">
                   Class
+                </th>
+                <th className="p-3 text-left text-sm font-medium text-secondary">
+                  Parents
                 </th>
                 <th className="p-3 text-left text-sm font-medium text-secondary">
                   Actions
@@ -259,10 +311,14 @@ export default function StudentManager() {
               {filteredStudents.map((student) => (
                 <tr key={student.id} className="border-b hover:bg-gray-50">
                   <td className="p-3">{student.name}</td>
-                  <td className="p-3">{student.email}</td>
                   <td className="p-3">{student.phoneNumber || "N/A"}</td>
                   <td className="p-3">{student.address || "N/A"}</td>
+                  <td className="p-3">{student.level || "N/A"}</td>
                   <td className="p-3">{student.class?.name || "N/A"}</td>
+                  <td className="p-3">
+                    {student.parentIds.map((id) => parents.find((p) => p.id === id)?.fullName).filter(Boolean).join(", ") || "N/A"}
+
+                  </td>
                   <td className="p-3">
                     <button
                       onClick={() => handleEditStudent(student)}
@@ -293,77 +349,20 @@ export default function StudentManager() {
         }}
         title="Add Student"
       >
-        <form onSubmit={handleCreateStudent} className="space-y-4">
-          {formError && <p className="text-red-500 text-sm">{formError}</p>}
-          <div>
-            <label
-              htmlFor="name"
-              className="block text-sm font-medium text-secondary"
-            >
-              Name
-            </label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              value={studentFormData.name}
-              onChange={handleStudentInputChange}
-              className="mt-1 block w-full p-3 border rounded-md focus:ring-primary focus:border-primary"
-              required
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="phoneNumber"
-              className="block text-sm font-medium text-secondary"
-            >
-              Phone Number
-            </label>
-            <input
-              type="text"
-              id="phoneNumber"
-              name="phoneNumber"
-              value={studentFormData.phoneNumber}
-              onChange={handleStudentInputChange}
-              className="mt-1 block w-full p-3 border rounded-md focus:ring-primary focus:border-primary"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="address"
-              className="block text-sm font-medium text-secondary"
-            >
-              Address
-            </label>
-            <input
-              type="text"
-              id="address"
-              name="address"
-              value={studentFormData.address}
-              onChange={handleStudentInputChange}
-              className="mt-1 block w-full p-3 border rounded-md focus:ring-primary focus:border-primary"
-            />
-          </div>
-          <div className="flex justify-end space-x-2">
-            <button
-              type="button"
-              onClick={() => {
-                setCreateStudent(false);
-                setFormError("");
-              }}
-              className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-100"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-700"
-            >
-              Create
-            </button>
-          </div>
-        </form>
+         <StudentForm
+          student={null}
+          classes={classes}
+          parents={parents}
+          onSubmit={async(data) => {
+            await handleCreateStudent({preventDefault: () => {}, ...data} as any)
+          }}
+          onCancel={() => setCreateStudent(false)}
+          error={formError}
+          onParentCreated={handleParentCreated}
+        />
       </Modal>
+
+      {/* Edit Student Modal */}
       <Modal
         isOpen={!!editStudent}
         onClose={() => {
@@ -377,8 +376,11 @@ export default function StudentManager() {
           classes={classes}
           onSubmit={handleUpdateStudent}
           onCancel={() => setEditStudent(null)}
-          error={formError}
-        />
+          error={formError} 
+          parents={[]} 
+          onParentCreated={function (newParent: Parent): void {
+            throw new Error("Function not implemented.");
+          } }        />
       </Modal>
 
       <Modal

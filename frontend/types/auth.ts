@@ -11,10 +11,11 @@ export interface User {
 export interface Student {
   id: string;
   name: string;
-  email: string;
   phoneNumber?: string;
   address?: string;
+  level?: string;
   class?: { id: string; name: string } | null;
+  parentIds: string[];
 }
 
 export interface Parent {
