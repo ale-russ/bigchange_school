@@ -42,12 +42,12 @@ router.post(
     authMiddleware,
     roleMiddleware(["admin", "teacher"]),
     body("fullName").notEmpty().withMessage("Full name is required"),
-    body("phoneNumber")
-      .isMobilePhone()
-      .notEmpty()
-      .withMessage("Invalid Phone number"),
+    body("phoneNumber").notEmpty().withMessage("Invalid Phone number"),
     body("address").notEmpty().withMessage("Address is required"),
-    body("childrenIds").isArray().withMessage("Children IDs must be an array"),
+    body("childrenIds")
+      .optional()
+      .isArray()
+      .withMessage("Children IDs must be an array"),
   ],
   async (req, res, next) => {
     try {

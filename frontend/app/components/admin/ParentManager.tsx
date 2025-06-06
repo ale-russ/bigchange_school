@@ -87,7 +87,8 @@ export default function ParentManager() {
       setFormError("");
       await fetchStudents();
     } catch (err: any) {
-      setFormError(err.response?.data?.message || "Failed to create parent");
+      console.log("Error: ", err);
+      setFormError("Failed to create parent");
     }
   };
 
