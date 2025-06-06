@@ -174,7 +174,7 @@ export default function TeacherManager() {
                   <td className="p-3">
                     <button
                       onClick={() => handleEditUser(user)}
-                      className="text-primary hover:underline mr-2 hover:cursor-pointer"
+                      className="text-blue-600 hover:underline mr-2 hover:cursor-pointer"
                     >
                       Edit
                     </button>

@@ -21,7 +21,7 @@ router.get(
         phoneNumber: student.phoneNumber,
         address: student.address,
         class: student.classId
-          ? { id: student.classId._id.toString, name: student.classId.name }
+          ? { id: student.classId._id.toString(), name: student.classId.name }
           : null,
         level: student.level,
         parentIds: student.parentIds.map((p) => p._id.toString()),

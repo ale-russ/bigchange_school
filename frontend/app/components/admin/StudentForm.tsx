@@ -1,29 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useSession } from "next-auth/react";
 
 import { Student, Class, Parent } from "@/types/auth";
 import Modal from "../ui/Modal";
+import MultiSelectCheckbox from "../ui/MultiSelectCheckbox";
 
 interface StudentFormProps {
   student: Student | null;
   classes: Class[];
   parents: Parent[];
-  onSubmit: (data: Partial<Student>) => Promise<void>;
+  onSubmit: () => Promise<void>;
   onCancel: () => void;
-  error: string;
-  onParentCreated: (newParent: Parent) => void;
+  onParentCreated?: (newParent: Parent) => void;
 }
 
 export default function StudentForm({
   student,
   classes,
-  onSubmit,
   parents,
+  onSubmit,
   onCancel,
-  error,
   onParentCreated,
 }: StudentFormProps) {
   const { data: session } = useSession();
@@ -43,27 +42,20 @@ export default function StudentForm({
   });
   const [showParentModal, setShowParentModal] = useState(false);
   const [parentFormError, setParentFormError] = useState("");
-  const [formValidationError, setFormValidationError] = useState("");
+  const [error, setError] = useState("");
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    if (name === "parentIds" && e.target instanceof HTMLSelectElement) {
-      const options = e.target.options;
-      const selected: string[] = [];
-      for (let i = 0; i < options.length; i++) {
-        if (options[i].selected) selected.push(options[i].value);
-      }
-      console.log("Selected parentIds:", selected);
-      setFormData((prev) => {
-        const newFormData = { ...prev, parentIds: selected };
-        console.log("Updated formData:", newFormData);
-        return newFormData;
-      });
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
+    setFormData((prev) => ({
+      ...prev,
+      [name]: name === "classId" ? (value === "" ? null : value) : value,
+    }));
+  };
+
+  const handleParentSelection = (parentIds: string[]) => {
+    setFormData((prev) => ({ ...prev, parentIds }));
   };
 
   const handleParentInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,11 +73,11 @@ export default function StudentForm({
     try {
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_SERVER_URL}/parents`,
-        { ...parentFormData, childrenIds: [] }, // No children yet
+        { ...parentFormData, childrenIds: [] },
         { headers: { Authorization: `Bearer ${session.accessToken}` } }
       );
       const newParent: Parent = response.data;
-      onParentCreated(newParent);
+      onParentCreated?.(newParent);
       setFormData((prev) => ({
         ...prev,
         parentIds: [...prev.parentIds, newParent.id],
@@ -102,16 +94,31 @@ export default function StudentForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.parentIds.length == 0) {
-      setFormValidationError("At least one parent must be selected");
+    if (formData.parentIds.length === 0) {
+      setError("At least one parent must be selected");
       return;
     }
-    setFormValidationError("");
-    await onSubmit(formData);
+    try {
+      const url = student?.id ? `/students/${student.id}` : `/students`;
+      const method = student?.id ? "put" : "post";
+      await axios[method](
+        `${process.env.NEXT_PUBLIC_SERVER_URL}${url}`,
+        formData,
+        {
+          headers: { Authorization: `Bearer ${session?.accessToken}` },
+        }
+      );
+      await onSubmit();
+    } catch (err: any) {
+      setError("Failed to save student");
+    }
   };
-
   return (
-    <>
+    <Modal
+      isOpen={true}
+      onClose={onCancel}
+      title={student?.id ? "Edit Student" : "Add Student"}
+    >
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && <p className="text-red-500 text-sm">{error}</p>}
         <div>
@@ -193,36 +200,37 @@ export default function StudentForm({
             onChange={handleInputChange}
             className="mt-1 block w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value="">No Class</option>
-            {classes.map((cls) => (
-              <option key={cls.id} value={cls.id}>
-                {cls.name}
-              </option>
-            ))}
+            <option value={student?.class ? student.class.id : ""}>
+              {student?.class ? student.class.name : "Select Class"}
+            </option>
+            {classes
+              .filter((cls) => {
+                return cls.id !== student?.class?.id;
+              })
+              .map((cls) => (
+                <option key={cls.id} value={cls.id}>
+                  {cls.name}
+                </option>
+              ))}
           </select>
         </div>
         <div>
-          <label
-            htmlFor="parentIds"
-            className="block text-sm font-medium text-gray-700"
-          >
+          <label className="block text-sm font-medium text-gray-700">
             Parents
           </label>
           <div className="flex items-center space-x-2">
-            <select
-              id="parentIds"
-              name="parentIds"
-              multiple
-              value={formData.parentIds}
-              onChange={handleInputChange}
-              className="mt-1 block w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-            >
-              {parents.map((parent) => (
-                <option key={parent.id} value={parent.id}>
-                  {parent.fullName} ({parent.phoneNumber || "No phone"})
-                </option>
-              ))}
-            </select>
+            <div className="w-full">
+              <MultiSelectCheckbox
+                options={parents.map((p) => ({
+                  id: p.id,
+                  label: `${p.fullName} (${p.phoneNumber || "No phone"})`,
+                }))}
+                selectedIds={formData.parentIds}
+                onChange={handleParentSelection}
+                placeholder="Select Parents"
+                itemName="Parent"
+              />
+            </div>
             <button
               type="button"
               onClick={() => setShowParentModal(true)}
@@ -232,6 +240,7 @@ export default function StudentForm({
             </button>
           </div>
         </div>
+
         <div className="flex justify-end space-x-2">
           <button
             type="button"
@@ -332,6 +341,6 @@ export default function StudentForm({
           </div>
         </form>
       </Modal>
-    </>
+    </Modal>
   );
 }
