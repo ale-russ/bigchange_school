@@ -186,7 +186,7 @@ export default function StudentForm({
             className="mt-1 block w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
-        <div>
+        {/* <div>
           <label
             htmlFor="classId"
             className="block text-sm font-medium text-gray-700"
@@ -213,6 +213,26 @@ export default function StudentForm({
                 </option>
               ))}
           </select>
+        </div> */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Class
+          </label>
+          <div className="flex items-center space-x-2">
+            <div className="w-full">
+              <MultiSelectCheckbox
+                options={classes.map((cls) => ({
+                  id: cls.id,
+                  label: `${cls.name}`,
+                }))}
+                selectedIds={formData.classId ? [formData.classId] : []}
+                onChange={handleParentSelection}
+                placeholder="Select Class"
+                itemName={student?.class?.name}
+                isClass={true}
+              />
+            </div>
+          </div>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">
@@ -229,15 +249,18 @@ export default function StudentForm({
                 onChange={handleParentSelection}
                 placeholder="Select Parents"
                 itemName="Parent"
+                isClass={false}
               />
             </div>
-            <button
-              type="button"
-              onClick={() => setShowParentModal(true)}
-              className="px-3 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
-            >
-              Add New Parent
-            </button>
+            {!student?.id && (
+              <button
+                type="button"
+                onClick={() => setShowParentModal(true)}
+                className="px-3 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+              >
+                Add New Parent
+              </button>
+            )}
           </div>
         </div>
 
