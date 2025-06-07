@@ -12,10 +12,22 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
+import { useState } from "react";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -27,6 +39,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const { login, user } = useAuth();
+  const [loginFailed, setLoginFailed] = useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -46,7 +59,8 @@ export default function LoginPage() {
       }
       toast.success("Login successful");
     } catch (error) {
-      toast.error("Login failed. Please check your credentials.");
+      setLoginFailed(true);
+     
     }
   };
 
@@ -90,6 +104,23 @@ export default function LoginPage() {
           </Button>
         </form>
       </Form>
+      {loginFailed && (
+        <AlertDialog open={loginFailed} onOpenChange={setLoginFailed}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Login Failed</AlertDialogTitle>
+              <AlertDialogDescription>
+                Please check your email and password and try again.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setLoginFailed(false)}>
+                Close
+              </AlertDialogCancel>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 }
