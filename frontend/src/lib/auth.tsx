@@ -13,17 +13,19 @@ interface AuthContextType {
   user: User;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
-  register: (email: string, password: string, role:"admin" | "teacher", name: string, phoneNumber: string, address: string) => Promise<void>;
-  //   isAuthenticated: () => boolean;
+  register: (name: string, email: string, password: string, role:"admin" | "teacher", phoneNumber: string, address: string, ) => Promise<void>;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User>({ role: null });
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const login = async (email: string, password: string) => {
+    setIsLoading(true)
     try {
       const response = await axios.post(
         `http://localhost:5000/api/auth/login`,
@@ -35,7 +37,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const {role} = await response.data?.user;
       const token = response.data?.token;
-      console.log('response: ',response);
       
       if(role && (role === "admin" || role === "teacher")){
         setUser({ role: response.data?.role, token: response.data?.token, ...response.data?.user });
@@ -47,33 +48,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if(role === "admin") router.push("/admin/dashboard");
       else if(role === "teacher") router.push("/teacher/dashboard");  
     } catch (err) {
+      console.error("Login error: ", err);
       throw new Error("Invalid credentials. Please try again.");
+    } finally{
+      setIsLoading(false)
     }
   };
   const register = async (
+      name: string,
       email: string,
       password: string,
       role: "admin" | "teacher",
-      name: string,
       phoneNumber: string,
-      address: string
+      address: string,
     ) => {
-      console.log("Registering user with: ", { email, password, role, name, phoneNumber, address });
+      setIsLoading(true)
       try {
         const response = await axios.post(
-          `http://localhost:5000/api/auth/signup`,
-          { email, password, name, role, phoneNumber, address }
+          'http://localhost:5000/api/auth/signup',
+          { name, email, password, role, phoneNumber, address,  }
         );
+        if (response.status !== 200 && response.status !== 201)
+          throw new Error(response?.data?.message || "Invalid credentials. Please try again.");
 
-        console.log("Response: ", response)
-  
-        if (response.status !== 200)
-          throw new Error("Invalid credentials. Please try again.");
-  
         const data = await response.data;
+        const token = response.data?.token;
+        role  = await response.data?.user?.role;
+  
+        if(role && (role === "admin" || role === "teacher")){
+          setUser({ role: response.data?.role, token: response.data?.token, ...response.data?.user });
+          localStorage.setItem("token", token);
+          localStorage.setItem("role", response.data?.user?.role);
+          localStorage.setItem("user",JSON.stringify(response.data?.user))
+        }
+  
+        if(role === "admin") router.push("/admin/dashboard");
+        else if(role === "teacher") router.push("/teacher/dashboard");  
         setUser({ role: data.role, token: data.token, ...data.user });
-      } catch (err) {
-        throw new Error("Invalid credentials. Please try again.");
+      } catch (err:any) {
+        throw new Error(err.response?.data?.message || "Invalid credentials. Please try again.");
+      }finally{
+        setIsLoading(false)
       }
     };
 
@@ -84,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, register }}>
+    <AuthContext.Provider value={{ user, login, logout, register, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

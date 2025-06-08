@@ -15,13 +15,13 @@ export default function Navbar() {
   const { user, logout } = useAuth();
 console.log("user: ", user);
   return (
-    <NavigationMenu className="w-full p-4 bg-primary text-primary-foreground">
+    <NavigationMenu className="w-full p-4 bg-primary shadow shadow-lg text-primary-foreground flex justify-end">
       <NavigationMenuList className="flex gap-4 w-full">
-        <NavigationMenuItem>
+        {/* <NavigationMenuItem>
           <NavigationMenuLink asChild>
             <Link href="/">Home</Link>
           </NavigationMenuLink>
-        </NavigationMenuItem>
+        </NavigationMenuItem> */}
         {!user?.role && (
           <>
             <NavigationMenuItem>

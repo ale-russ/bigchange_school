@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { setLazyProp } from "next/dist/server/api-utils";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Loader from "./common/Loader";
 
 interface ProtectedRouteProps {
   allowedRole: "admin" | "teacher";
@@ -28,7 +29,7 @@ export default function ProtectedRoute({
   }, [user.role, allowedRole, router]);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <Loader />;
   }
 
  

@@ -28,26 +28,30 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { useState } from "react";
+import Loader from "@/components/common/Loader";
 
 const registerSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   phoneNumber: z.string().min(10, "Phone number must be at least 10 digits"),
+  confirmPassword: z.string().min(6, "Confirm Password and Password must match"),
   address: z.string().min(5, "Address must be at least 5 characters"),
   role:z.enum(["admin","teacher"]),
   name: z.string().min(3, "Name must be at least 3 characters")
-});
+}).refine((data) => data.password === data.confirmPassword,{message: "Passwords do not match", path:["confirmPassword"]});
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
   const router = useRouter();
-   const { register, user } = useAuth();
-   const [registrationFailed, setRegistrationFailed] = useState(false)
-
+   const { register, user, isLoading } = useAuth();
+   const [showAlert, setShowAlert] = useState(false)
+   const [responseMessage, setResponseMessage] = useState("");
+   
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
+      name:"",
       email: "",
       password: "",
       phoneNumber: "",
@@ -57,28 +61,39 @@ export default function RegisterPage() {
   });
 
   const onSubmit = async (data: RegisterFormValues) => {
-  console.log("in submit button")
+  console.log("in submit button, data: ", data)
      try {
-       await register(data.email, data.password, data.role, data.phoneNumber, data.name, data.address);
-       if (user.role === "admin") {
-         router.push("/admin/dashboard");
-       } else if (user.role === "teacher") {
-         router.push("/teacher/dashboard");
-       }
-       toast.success("Login successful");
+       await register(data.name,data.email, data.password,data.role, data.phoneNumber,  data.address,);
+      form.reset();
      } catch (error) {
-       setRegistrationFailed(true);
+       setShowAlert(true);
+       console.error("Registration failed:", error);  
+       setResponseMessage(error instanceof Error ? error.message : "Registration failed. Please try again.");
+       form.reset();
       
      }
    };
 
- 
-
-  return (
+  return ( 
     <div className="max-w-md mx-auto mt-10">
-      <h1 className="text-2xl font-bold mb-4">Register Teacher</h1>
+      {isLoading ? (<Loader />) : (
+        <>
+      <h1 className="text-2xl font-bold mb-4">Register</h1>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           <FormField
             control={form.control}
             name="email"
@@ -99,11 +114,20 @@ export default function RegisterPage() {
               <FormItem>
                 <FormLabel>Password</FormLabel>
                 <FormControl>
-                  <Input
-                    type="password"
-                    placeholder="Enter password"
-                    {...field}
-                  />
+                  <Input type="password" placeholder="Enter password" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="confirmPassword"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Confirm Password</FormLabel>
+                <FormControl>
+                  <Input type="password" placeholder="Enter password" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -122,8 +146,20 @@ export default function RegisterPage() {
               </FormItem>
             )}
           />
-
-         <FormField
+          <FormField
+            control={form.control}
+            name="address"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Address</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter address" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
             control={form.control}
             name="role"
             render={({ field }) => (
@@ -143,36 +179,23 @@ export default function RegisterPage() {
               </FormItem>
             )}
           />
-          
-          <FormField
-            control={form.control}
-            name="address"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Address</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter address" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
           <Button type="submit" className="w-full">
             Register
           </Button>
         </form>
       </Form>
-      {registrationFailed && (
-              <AlertDialog open={registrationFailed} onOpenChange={setRegistrationFailed}>
+      </>)}
+      {showAlert && (
+              <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Registration Failed</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Please check your email and password and try again.
+                    <AlertDialogDescription className="text-red-500">
+                     {responseMessage}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel onClick={() => setRegistrationFailed(false)}>
+                    <AlertDialogCancel onClick={() => setShowAlert(false)}>
                       Close
                     </AlertDialogCancel>
                   </AlertDialogFooter>

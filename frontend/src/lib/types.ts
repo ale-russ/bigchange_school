@@ -1,42 +1,51 @@
-export interface Student {
-  studentId: string;
+export interface User {
+  id: string;
   name: string;
-  phoneNumber: string;
+  email: string;
+  role: "student" | "teacher" | "admin";
+  token?: string;
+  phoneNumber?: string;
+  address?: string;
+}
+
+export interface Student {
+  id: string;
+  name: string;
+  phoneNumber?: string;
+  address?: string;
+  level?: string;
+  class?: { id: string; name: string } | null;
   parentIds: string[];
-  classId?: string;
-  level: string;
-  address: string;
-  isUnassigned: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
 }
 
 export interface Parent {
-  parentId: string;
+  id: string;
   fullName: string;
-  phoneNumber: string;
-  address: string;
-  studentIds: string[];
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-export interface Teacher {
-  teacherId: string;
-  email: string;
-  password: string;
-  phoneNumber: string;
-  address: string;
-  classIds?: string[];
-  createdAt?: Date;
-  updatedAt?: Date;
+  email?: string;
+  phoneNumber?: string;
+  address?: string;
+  children?: [{ id: string; name: string }] | null;
 }
 
 export interface Class {
-  classId: string;
+  id: string;
   name: string;
-  teacherId: string;
-  studentIds: string[];
-  createdAt?: Date;
-  updatedAt?: Date;
+  level: string;
+  teacher: { id: string; name: string; email: string; phoneNumber: string };
+  students: { id: string; name: string; email: string }[];
+}
+
+export interface Session {
+  user: User;
+  accessToken: string;
+}
+
+export interface Credentials {
+  email: string;
+  password: string;
+  name?: string;
+  role?: "student" | "teacher" | "admin";
+  isSignup?: boolean;
+  phoneNumber?: string;
+  address?: string;
 }

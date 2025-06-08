@@ -28,6 +28,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { useState } from "react";
+import Loader from "@/components/common/Loader";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -38,8 +39,9 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, user } = useAuth();
+  const { login, user, isLoading } = useAuth();
   const [loginFailed, setLoginFailed] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("")
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -58,7 +60,8 @@ export default function LoginPage() {
         router.push("/teacher/dashboard");
       }
       toast.success("Login successful");
-    } catch (error) {
+    } catch (error:any) {
+      setErrorMessage(error instanceof Error ? error.message : "Registration failed. Please try again.");
       setLoginFailed(true);
      
     }
@@ -66,6 +69,8 @@ export default function LoginPage() {
 
   return (
     <div className="max-w-md mx-auto mt-10">
+      {isLoading ? (<Loader />) : <>
+      
       <h1 className="text-2xl font-bold mb-4">Login</h1>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -104,13 +109,14 @@ export default function LoginPage() {
           </Button>
         </form>
       </Form>
+      </>}
       {loginFailed && (
         <AlertDialog open={loginFailed} onOpenChange={setLoginFailed}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Login Failed</AlertDialogTitle>
-              <AlertDialogDescription>
-                Please check your email and password and try again.
+              <AlertDialogDescription className="text-red-500">
+              {errorMessage}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
