@@ -57,6 +57,7 @@ export function useStudentManager(searchQuery: string) {
 
   const editForm = useForm<EditFormValues>({
     resolver: zodResolver(editSchema),
+    mode:"onSubmit",
     defaultValues: {
       name: "",
       phoneNumber: "",
@@ -69,6 +70,7 @@ export function useStudentManager(searchQuery: string) {
 
   const createForm = useForm<EditFormValues>({
     resolver: zodResolver(editSchema),
+    mode:"onSubmit",
     defaultValues: {
       name: "",
       phoneNumber: "",
@@ -81,6 +83,7 @@ export function useStudentManager(searchQuery: string) {
 
   const createParentForm = useForm<ParentFormValues>({
     resolver: zodResolver(parentSchema),
+    mode:"onSubmit",
     defaultValues: { fullName: "", email: "", phoneNumber: "", address: "" },
   });
 
@@ -265,7 +268,8 @@ export function useStudentManager(searchQuery: string) {
   };
 
   const onCreateParentSubmit = async (data: ParentFormValues) => {
-    setIsLoading(true);
+console.log("in create parent function")
+    // setIsLoading(true);
     console.log("data: ", data);
     try {
       const response = await axios.post(
