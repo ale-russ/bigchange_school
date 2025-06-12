@@ -9,12 +9,10 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { useStudentManager } from "@/hooks/useStudentManager";
-import {
-  EditModal,
-  DeleteModal,
-  CreateStudentModal,
-  CreateParentModal,
-} from "./Modals";
+import { EditModal, CreateStudentModal } from "./modals/StudentModals";
+import { DeleteModal } from "./modals/DeleteModal";
+import { CreateParentModal } from "./modals/ParentModal";
+import Loader from "../common/Loader";
 
 interface StudentManagerProps {
   searchQuery: string;
@@ -66,7 +64,9 @@ export default function StudentManager({ searchQuery }: StudentManagerProps) {
         <TableBody>
           {isLoading ? (
             <TableRow>
-              <TableCell colSpan={7}>Loading...</TableCell>
+              <TableCell colSpan={7}>
+                <Loader />
+              </TableCell>
             </TableRow>
           ) : students.length === 0 ? (
             <TableRow>

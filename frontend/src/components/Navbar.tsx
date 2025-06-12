@@ -10,12 +10,11 @@ import { useAuth } from "@/lib/auth";
 import Link from "next/link";
 import { Button } from "./ui/button";
 
-
 export default function Navbar() {
   const { user, logout } = useAuth();
-console.log("user: ", user);
+
   return (
-    <NavigationMenu className="w-full p-4 bg-primary shadow shadow-lg text-primary-foreground flex justify-end">
+    <NavigationMenu className="w-full p-4 bg-primary shadow-lg text-primary-foreground flex justify-end">
       <NavigationMenuList className="flex gap-4 w-full">
         {/* <NavigationMenuItem>
           <NavigationMenuLink asChild>
@@ -50,12 +49,12 @@ console.log("user: ", user);
             </NavigationMenuLink>
           </NavigationMenuItem>
         )}
-        {user.role &&(
-         <NavigationMenuItem>
-              <Button variant={"destructive"}  onClick={logout} className="ml-2">
-                Logout
-              </Button>
-            </NavigationMenuItem>
+        {user.role && (
+          <NavigationMenuItem>
+            <Button variant={"destructive"} onClick={logout} className="ml-2">
+              Logout
+            </Button>
+          </NavigationMenuItem>
         )}
       </NavigationMenuList>
     </NavigationMenu>

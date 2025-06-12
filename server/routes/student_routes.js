@@ -170,6 +170,7 @@ router.put(
   async (req, res, next) => {
     try {
       const errors = validationResult(req);
+      console.log("error: ", errors);
       if (!errors.isEmpty())
         return res.status(400).json({ errors: errors.array() });
 

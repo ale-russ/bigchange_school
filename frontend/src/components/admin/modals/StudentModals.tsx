@@ -43,14 +43,6 @@ interface EditModalProps {
   selectedStudent: Student | null;
 }
 
-interface DeleteModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
-  isLoading: boolean;
-  selectedStudent: Student | null;
-}
-
 interface CreateStudentModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -60,14 +52,6 @@ interface CreateStudentModalProps {
   classes: Class[];
   parents: Parent[];
   setCreateParentOpen: (open: boolean) => void;
-}
-
-interface CreateParentModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  form: any;
-  onSubmit: (data: any) => void;
-  isLoading: boolean;
 }
 
 export function EditModal({
@@ -266,46 +250,6 @@ export function EditModal({
             </DialogFooter>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-export function DeleteModal({
-  open,
-  onOpenChange,
-  onConfirm,
-  isLoading,
-  selectedStudent,
-}: DeleteModalProps) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Confirm Deletion</DialogTitle>
-        </DialogHeader>
-        <div className="py-4">
-          <p>
-            Are you sure you want to delete {selectedStudent?.name}? This action
-            cannot be undone.
-          </p>
-        </div>
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isLoading}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={onConfirm}
-            disabled={isLoading}
-          >
-            Delete
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
@@ -528,78 +472,6 @@ export function CreateStudentModal({
             <DialogFooter>
               <Button type="submit" disabled={isLoading}>
                 Create
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-export function CreateParentModal({
-  open,
-  onOpenChange,
-  form,
-  onSubmit,
-  isLoading,
-}: CreateParentModalProps) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Create Parent</DialogTitle>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="fullName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Full Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter full name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="phoneNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Phone Number</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter phone number" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Address</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter address" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <DialogFooter>
-              <Button
-                type="submit"
-                disabled={isLoading}
-                onClick={() => {
-                  console.log("Button clicked");
-                }}
-              >
-                Create Parent
               </Button>
             </DialogFooter>
           </form>

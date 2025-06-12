@@ -77,7 +77,6 @@ export default function TeacherManager() {
             },
           }
         );
-        console.log("response: ", response.data);
         setUsers(response.data);
       } catch (err) {
         toast.error("Failed to fetch students");

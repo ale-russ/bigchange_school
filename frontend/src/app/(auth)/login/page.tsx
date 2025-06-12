@@ -22,7 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -41,7 +41,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { login, user, isLoading } = useAuth();
   const [loginFailed, setLoginFailed] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("")
+  const [errorMessage, setErrorMessage] = useState("");
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -54,69 +54,70 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormValues) => {
     try {
       await login(data.email, data.password);
-      if (user.role === "admin") {
-        router.push("/admin/dashboard");
-      } else if (user.role === "teacher") {
-        router.push("/teacher/dashboard");
-      }
       toast.success("Login successful");
-    } catch (error:any) {
-      setErrorMessage(error instanceof Error ? error.message : "Registration failed. Please try again.");
+    } catch (error: any) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Registration failed. Please try again."
+      );
       setLoginFailed(true);
-     
     }
   };
 
   return (
     <div className="max-w-md mx-auto mt-10">
-      {isLoading ? (<Loader />) : <>
-      
-      <h1 className="text-2xl font-bold mb-4">Login</h1>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter your email" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Password</FormLabel>
-                <FormControl>
-                  <Input
-                    type="password"
-                    placeholder="Enter your password"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <Button type="submit" className="w-full">
-            Login
-          </Button>
-        </form>
-      </Form>
-      </>}
+      {isLoading ? (
+        <Loader />
+      ) : (
+        <>
+          <h1 className="text-2xl font-bold mb-4">Login</h1>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter your email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="Enter your password"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full">
+                Login
+              </Button>
+            </form>
+          </Form>
+        </>
+      )}
       {loginFailed && (
         <AlertDialog open={loginFailed} onOpenChange={setLoginFailed}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Login Failed</AlertDialogTitle>
               <AlertDialogDescription className="text-red-500">
-              {errorMessage}
+                {errorMessage}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

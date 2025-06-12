@@ -57,7 +57,7 @@ export function useStudentManager(searchQuery: string) {
 
   const editForm = useForm<EditFormValues>({
     resolver: zodResolver(editSchema),
-    mode:"onSubmit",
+    mode: "onSubmit",
     defaultValues: {
       name: "",
       phoneNumber: "",
@@ -70,7 +70,7 @@ export function useStudentManager(searchQuery: string) {
 
   const createForm = useForm<EditFormValues>({
     resolver: zodResolver(editSchema),
-    mode:"onSubmit",
+    mode: "onSubmit",
     defaultValues: {
       name: "",
       phoneNumber: "",
@@ -83,7 +83,7 @@ export function useStudentManager(searchQuery: string) {
 
   const createParentForm = useForm<ParentFormValues>({
     resolver: zodResolver(parentSchema),
-    mode:"onSubmit",
+    mode: "onSubmit",
     defaultValues: { fullName: "", email: "", phoneNumber: "", address: "" },
   });
 
@@ -213,10 +213,12 @@ export function useStudentManager(searchQuery: string) {
   );
 
   const onCreateSubmit = async (data: EditFormValues) => {
+    console.log("create Student data: ", data);
     setIsLoading(true);
 
     try {
       let parentIds = data.parents;
+      console.log("parentIds: ", parentIds.length);
       if (parentIds.length === 0) {
         // Create a new parent if none is selected
         const newParent = {
@@ -224,6 +226,8 @@ export function useStudentManager(searchQuery: string) {
           phoneNumber: "",
           address: "",
         };
+
+        console.log("Parent: ", newParent);
 
         const parentResponse = await axios.post(
           `${process.env.NEXT_PUBLIC_SERVER_URL}/parents`,
@@ -233,7 +237,7 @@ export function useStudentManager(searchQuery: string) {
 
         parentIds = [parentResponse.data.id];
         setParents((prev) => [...prev, parentResponse.data]);
-
+      } else {
         const studentData = {
           ...data,
           parentIds,
@@ -268,7 +272,7 @@ export function useStudentManager(searchQuery: string) {
   };
 
   const onCreateParentSubmit = async (data: ParentFormValues) => {
-console.log("in create parent function")
+    console.log("in create parent function");
     // setIsLoading(true);
     console.log("data: ", data);
     try {
