@@ -16,6 +16,7 @@ import ProtectedRoute from "@/components/ProtectedRoutes";
 import { useState } from "react";
 import StudentManager from "@/components/admin/StudentManager";
 import SearchBar from "@/components/common/SearchBar";
+import ParentManager from "@/components/admin/ParentManager";
 
 export default function AdminDashboard() {
   const tabStyle =
@@ -34,7 +35,7 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="users">
-              <TabsList className="w-full space-x-3">
+              <TabsList className="w-full space-x-3 flex flex-wrap">
                 <TabsTrigger value="users" className={tabStyle}>
                   Admin
                 </TabsTrigger>
@@ -56,7 +57,7 @@ export default function AdminDashboard() {
                 <StudentManager searchQuery={searchQuery} />
               </TabsContent>
               <TabsContent value="parents">
-                <TeacherManager />
+                <ParentManager searchQuery={searchQuery} />
               </TabsContent>
               <TabsContent value="classes">
                 <TeacherManager />

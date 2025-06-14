@@ -56,10 +56,11 @@ export function useParentManager(searchQuery: string) {
         );
 
         setParents(response.data);
+        console.log("parents; ", parents);
       } catch (err: any) {
         toast.error("Failed to fetch: ", err);
       } finally {
-        setIsLoading(true);
+        setIsLoading(false);
       }
     };
 
@@ -72,11 +73,7 @@ export function useParentManager(searchQuery: string) {
       fullName: parent.fullName,
       phoneNumber: parent.phoneNumber,
       address: parent.address,
-      children: parent.children
-        ? parent.children.map((child) =>
-            typeof child === "string" ? child : child.id
-          )
-        : [],
+      children: parent.children ? parent.children.map((child) => child.id) : [],
     });
     setEditOpen(true);
   };
@@ -179,7 +176,12 @@ export function useParentManager(searchQuery: string) {
       (parent.phoneNumber || "")
         .toLowerCase()
         .includes(searchQuery.toLowerCase()) ||
-      (parent.address || "").toLowerCase().includes(searchQuery.toLowerCase())
+      (parent.address || "")
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      parent.children?.map((child) =>
+        (child.name || "").toLowerCase().includes(searchQuery)
+      )
   );
 
   return {
