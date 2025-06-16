@@ -17,6 +17,7 @@ import { useState } from "react";
 import StudentManager from "@/components/admin/StudentManager";
 import SearchBar from "@/components/common/SearchBar";
 import ParentManager from "@/components/admin/ParentManager";
+import ClassManager from "@/components/admin/ClassManager";
 
 export default function AdminDashboard() {
   const tabStyle =
@@ -49,7 +50,7 @@ export default function AdminDashboard() {
                   Classes
                 </TabsTrigger>
               </TabsList>
-              {/* <div className="w-full bg-primary h-1"/> */}
+
               <TabsContent value="users">
                 <TeacherManager />
               </TabsContent>
@@ -60,7 +61,7 @@ export default function AdminDashboard() {
                 <ParentManager searchQuery={searchQuery} />
               </TabsContent>
               <TabsContent value="classes">
-                <TeacherManager />
+                <ClassManager searchQuery={searchQuery} />
               </TabsContent>
             </Tabs>
           </CardContent>

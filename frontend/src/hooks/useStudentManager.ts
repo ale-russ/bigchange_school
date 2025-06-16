@@ -265,6 +265,7 @@ export function useStudentManager(searchQuery: string) {
         });
       }
     } catch (err: any) {
+      console.log("Error: ", err);
       toast.error(err.response?.data?.message || "Failed to create student");
     } finally {
       setIsLoading(false);

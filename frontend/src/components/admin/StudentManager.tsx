@@ -122,8 +122,10 @@ export default function StudentManager({ searchQuery }: StudentManagerProps) {
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         onConfirm={onDeleteConfirm}
-        isLoading={isLoading}
-        selectedStudent={selectedStudent}
+        isLoading={false}
+        selectedEntity={selectedStudent}
+        entityName="Student"
+        displayProperty="name" // Default, so optional
       />
       <CreateStudentModal
         open={createOpen}

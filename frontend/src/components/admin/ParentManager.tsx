@@ -95,14 +95,13 @@ export default function ParentManager({ searchQuery }: ParentManagerProps) {
         </TableBody>
       </Table>
 
-      {/* <CreateParentModal
+      <CreateParentModal
         open={createOpen}
         onOpenChange={setCreateOpen}
         form={createForm}
         onSubmit={onCreateSubmit}
         isLoading={isLoading}
-        setCreateParentOpen={setCreateParentOpen}
-      /> */}
+      />
 
       <EditModal
         open={editOpen}
@@ -112,13 +111,15 @@ export default function ParentManager({ searchQuery }: ParentManagerProps) {
         isLoading={isLoading}
         selectedParent={selectedParent}
       />
-      {/* <DeleteModal
-              open={deleteOpen}
-              onOpenChange={setDeleteOpen}
-              onConfirm={onDeleteConfirm}
-              isLoading={isLoading}
-              selectedStudent={selectedParent}
-            /> */}
+      <DeleteModal
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        onConfirm={onDeleteConfirm}
+        isLoading={false}
+        selectedEntity={selectedParent}
+        entityName="Parent"
+        displayProperty="fullName"
+      />
     </>
   );
 }

@@ -21,10 +21,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CommandInput, CommandEmpty, CommandGroup, CommandItem } from "cmdk";
-import { ChevronDown, Command } from "lucide-react";
-import { toast } from "sonner";
-import { Parent, Student } from "@/lib/types";
+
+import { ChevronDown } from "lucide-react";
+import { Parent } from "@/lib/types";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
 
 interface CreateParentModalProps {
   open: boolean;
@@ -50,6 +56,7 @@ export function CreateParentModal({
   onSubmit,
   isLoading,
 }: CreateParentModalProps) {
+  const handleCreateParentClick = () => {};
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -101,9 +108,6 @@ export function CreateParentModal({
               <Button
                 type="submit"
                 disabled={isLoading}
-                // onClick={() => {
-                //   console.log("Button clicked");
-                // }}
                 onClick={() => onSubmit(form.getValues())}
               >
                 Create Parent
@@ -207,7 +211,7 @@ export function EditModal({
                               return (
                                 <CommandItem
                                   key={child.id}
-                                  value={child.name}
+                                  value={child.id}
                                   onSelect={() => {
                                     const isSelected = field.value?.includes(
                                       child.id

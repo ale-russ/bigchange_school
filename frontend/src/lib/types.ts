@@ -32,7 +32,7 @@ export interface Class {
   name: string;
   level: string;
   teacher: { id: string; name: string; email: string; phoneNumber: string };
-  students: { id: string; name: string; email: string }[];
+  students: { id: string; name: string }[];
 }
 
 export interface Session {

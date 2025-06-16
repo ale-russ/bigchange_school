@@ -44,9 +44,7 @@ router.post(
     authMiddleware,
     roleMiddleware(["admin", "teacher"]),
     body("name").notEmpty().withMessage("Name is required"),
-    body("phoneNumber")
-      .isMobilePhone("any")
-      .withMessage("Phone number is required"),
+    body("phoneNumber").notEmpty().withMessage("Phone number is required"),
     body("address").isString().withMessage("Invalid Address"),
     body("level").optional().isString().withMessage("Invalid Level"),
     body("parentIds")
@@ -54,6 +52,7 @@ router.post(
       .withMessage("At least one parent ID is required"),
   ],
   async (req, res, next) => {
+    console.log("in create student route: ", req.body);
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty())
@@ -143,7 +142,6 @@ router.post(
       };
       res.status(201).json(formattedStudent);
     } catch (err) {
-      console.log("Error: ", err);
       return res.status(500).json({ message: "Internal Server Error" });
     }
   }
