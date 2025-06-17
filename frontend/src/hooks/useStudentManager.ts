@@ -320,5 +320,6 @@ export function useStudentManager(searchQuery: string) {
     setDeleteOpen,
     setCreateOpen,
     setCreateParentOpen,
+    setStudents,
   };
 }

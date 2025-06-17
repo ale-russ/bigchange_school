@@ -52,7 +52,7 @@ export default function AdminDashboard() {
               </TabsList>
 
               <TabsContent value="users">
-                <TeacherManager />
+                <TeacherManager searchQuery={searchQuery} />
               </TabsContent>
               <TabsContent value="students">
                 <StudentManager searchQuery={searchQuery} />

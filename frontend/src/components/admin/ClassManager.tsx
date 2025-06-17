@@ -12,10 +12,16 @@ import { useClassManager } from "@/hooks/useClassManager";
 import Loader from "@/components/common/Loader";
 import { ClassModal } from "./modals/ClassModal";
 import { DeleteModal } from "./modals/DeleteModal";
+import { useTeacherManager } from "@/hooks/useTeacherManager";
 
-export default function ClassManager({ searchQuery }: { searchQuery: string }) {
+interface ClassManagerProps {
+  searchQuery: string;
+}
+
+export default function ClassManager({ searchQuery }: ClassManagerProps) {
   const {
     classes,
+    students,
     editOpen,
     deleteOpen,
     createOpen,
@@ -32,6 +38,7 @@ export default function ClassManager({ searchQuery }: { searchQuery: string }) {
     setDeleteOpen,
     setCreateOpen,
   } = useClassManager(searchQuery);
+  const { users } = useTeacherManager(searchQuery);
 
   return (
     <>
@@ -60,7 +67,7 @@ export default function ClassManager({ searchQuery }: { searchQuery: string }) {
               <TableRow key={classItem.id}>
                 <TableCell>{classItem.name}</TableCell>
                 <TableCell>{classItem.level}</TableCell>
-                <TableCell>{classItem.teacher.name}</TableCell>
+                <TableCell>{classItem.teacher?.name ?? "N/A"}</TableCell>
                 <TableCell>
                   {classItem.students
                     .map((student) => student.name)
@@ -97,6 +104,8 @@ export default function ClassManager({ searchQuery }: { searchQuery: string }) {
         isLoading={isLoading}
         selectedClass={null}
         mode="create"
+        students={students}
+        users={users.filter((user) => user.role === "teacher")}
       />
       <ClassModal
         open={editOpen}
@@ -106,6 +115,8 @@ export default function ClassManager({ searchQuery }: { searchQuery: string }) {
         isLoading={isLoading}
         selectedClass={selectedClass}
         mode="edit"
+        students={students}
+        users={users.filter((user) => user.role === "teacher")}
       />
       <DeleteModal
         open={deleteOpen}

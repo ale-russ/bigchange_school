@@ -18,17 +18,20 @@ router.get(
       const classes = await ClassModel.find()
         .populate("teacherId", "name email phoneNumber role")
         .populate("studentIds", "name phoneNumber address level");
+      console.log("classes: ", classes);
       const formattedClasses = classes.map((cls) => ({
         id: cls._id.toString(),
         name: cls.name,
         level: cls.level,
-        teacherId: cls.teacherId._id.toString(),
-        teacher: {
-          id: cls.teacherId._id.toString(),
-          name: cls.teacherId.name,
-          email: cls.teacherId.email,
-          phoneNumber: cls.teacherId.phoneNumber,
-        },
+        teacherId: cls.teacherId ? cls.teacherId._id.toString() : null,
+        teacher: cls.teacherId
+          ? {
+              id: cls.teacherId._id.toString(),
+              name: cls.teacherId.name,
+              email: cls.teacherId.email,
+              phoneNumber: cls.teacherId.phoneNumber,
+            }
+          : null,
         studentIds: cls.studentIds.map((s) => s._id.toString()),
         students: cls.studentIds.map((s) => ({
           id: s._id.toString(),
@@ -54,15 +57,22 @@ router.post(
     try {
       const { name, teacherId, studentIds } = req.body;
 
-      if (!name || !teacherId)
+      if (!name)
         return res
           .status(400)
-          .json({ message: "Name of the class and teacher are required" });
+          .json({ message: "Name of the class is required" });
 
-      const teacher = await User.findOne({ _id: teacherId, role: "teacher" });
-      console.log("TEacher: ", teacher);
-      if (!teacher)
-        return res.status(400).json({ message: "Teacher not found" });
+      let teacher = null;
+      let teacherIdValue = null;
+      if (teacherId) {
+        const teacher = await User.findOne({ _id: teacherId, role: "teacher" });
+        console.log("TEacher: ", teacher);
+
+        if (!teacher)
+          return res.status(400).json({ message: "Teacher not found" });
+
+        teacherIdVale = teacher._id;
+      }
 
       const students = studentIds?.length
         ? await Student.find({ _id: { $in: studentIds } })
@@ -75,8 +85,8 @@ router.post(
 
       const newClass = new ClassModel({
         name,
-        teacher: teacher,
-        teacherId: teacher._id,
+        teacher: teacher || {},
+        teacherId: teacherIdValue,
         students: studentIds || [],
       });
 
@@ -97,12 +107,14 @@ router.post(
       res.status(200).json({
         id: populatedClass._id.toString(),
         name: populatedClass.name,
-        teacher: {
-          id: populatedClass.teacherId._id.toString(),
-          name: populatedClass.teacherId.name,
-          email: populatedClass.teacherId.email,
-          phoneNumber: populatedClass.teacherId.phoneNumber,
-        },
+        teacher: populatedClass.teacherId
+          ? {
+              id: populatedClass.teacherId._id.toString(),
+              name: populatedClass.teacherId.name,
+              email: populatedClass.teacherId.email,
+              phoneNumber: populatedClass.teacherId.phoneNumber,
+            }
+          : null,
         students: populatedClass.studentIds?.map((student) => ({
           id: student._id.toString(),
           name: student.name,
@@ -131,10 +143,12 @@ router.put(
     try {
       const { id } = req.params;
       console.log("id: ", id);
+      console.log("body: ", req.body);
       const { name, teacherId, studentIds, level } = req.body;
       console.log("body: ", name, teacherId, studentIds, level);
 
       const teacher = await User.findOne({ _id: teacherId, role: "teacher" });
+      console.log("teacher: ", teacher);
       if (!teacher)
         return res.status(400).json({ message: "No teacher found" });
 
@@ -149,7 +163,7 @@ router.put(
 
       const updatedClass = await ClassModel.findByIdAndUpdate(
         id,
-        { name, teacher: teacherId, students: students, level: level || [] },
+        { name, teacherId, students: students, level: level || [] },
         { new: true }
       )
         .populate("teacherId", "name email phoneNumber")
@@ -164,15 +178,21 @@ router.put(
       if (studentIds?.length)
         await Student.updateMany({ _id: { $in: studentIds } }, { class: id });
 
+      console.log("Updated class: ", updatedClass);
+
       res.status(200).json({
         id: updatedClass._id.toString(),
         name: updatedClass.name,
         level: updatedClass.level,
         teacher: {
-          id: updatedClass.teacherId._id.toString(),
-          name: updatedClass.teacherId.name,
-          email: updatedClass.teacherId.email,
-          phoneNumber: updatedClass.teacherId.phoneNumber,
+          id: updatedClass?.teacherId
+            ? updatedClass?.teacherId?._id.toString()
+            : null,
+          name: updatedClass?.teacherId ? updatedClass?.teacherId?.name : null,
+          email: updatedClass?.teacherId ? updatedClass.teacherId.email : null,
+          phoneNumber: updatedClass?.teacherId
+            ? updatedClass.teacherId.phoneNumber
+            : null,
         },
         students: updatedClass.studentIds.map((student) => ({
           id: student._id.toString(),

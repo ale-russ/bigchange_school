@@ -14,6 +14,16 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
+import { ChevronDown } from "lucide-react";
+import { Class, Student, User } from "@/lib/types";
 import {
   Command,
   CommandEmpty,
@@ -21,16 +31,6 @@ import {
   CommandInput,
   CommandItem,
 } from "@/components/ui/command";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { useForm } from "react-hook-form";
-import { Class } from "@/lib/types";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { ChevronDown } from "lucide-react";
 
 interface ClassModalProps {
   open: boolean;
@@ -40,6 +40,9 @@ interface ClassModalProps {
   isLoading: boolean;
   selectedClass: Class | null;
   mode: "create" | "edit";
+  students: Student[];
+  // users: User[];
+  users: { id: string; name: string }[];
 }
 
 export function ClassModal({
@@ -50,6 +53,8 @@ export function ClassModal({
   isLoading,
   selectedClass,
   mode,
+  students,
+  users,
 }: ClassModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -82,7 +87,7 @@ export function ClassModal({
                   <FormLabel>Level</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Enter level (e.g., Grade 1)"
+                      placeholder="Enter level (e.g., Level 1)"
                       {...field}
                     />
                   </FormControl>
@@ -95,10 +100,50 @@ export function ClassModal({
               name="teacherId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Teacher ID</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter teacher ID" {...field} />
-                  </FormControl>
+                  <FormLabel>Teachers</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-between"
+                      >
+                        {field.value
+                          ? users.find((user) => user.id === field.value)
+                              ?.name || "Select teacher"
+                          : "Select teacher"}
+                        <ChevronDown />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-(--radix-popover-trigger-width) p-0">
+                      <Command>
+                        <CommandInput placeholder="Search teacher..." />
+                        <CommandEmpty>No Teacher found</CommandEmpty>
+                        <CommandGroup>
+                          {users.map((user) => (
+                            <CommandItem
+                              key={user.id}
+                              value={user.name}
+                              onSelect={() => {
+                                field.onChange(user.id);
+                              }}
+                            >
+                              <div className="flex items-center space-x-2 w-full">
+                                <input
+                                  type="radio"
+                                  checked={field.value === user.id}
+                                  onChange={() => field.onChange(user.id)}
+                                  readOnly
+                                  className="mr-2"
+                                />
+                                <span>{user.name}</span>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+
                   <FormMessage />
                 </FormItem>
               )}
@@ -108,77 +153,77 @@ export function ClassModal({
               name="studentIds"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Student IDs (comma-separated)</FormLabel>
-                  {mode === "create" ? (
-                    <FormControl>
-                      <Input
-                        placeholder="Enter student IDs (e.g., id1,id2,id3)"
-                        {...field}
-                        value={field.value?.join(",") || ""}
-                        onChange={(e) =>
-                          field.onChange(e.target.value.split(","))
-                        }
-                      />
-                    </FormControl>
-                  ) : (
+                  <FormLabel>Students</FormLabel>
+                  {mode === "edit" && selectedClass ? (
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
                           className="w-full justify-between"
                         >
-                          Students
+                          {field.value && field.value.length > 0
+                            ? students
+                                .filter((student) =>
+                                  field.value.includes(student.id)
+                                )
+                                .map((student) => student.name)
+                                .join(", ")
+                            : "Select students"}
                           <ChevronDown />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-full p-0">
+                      <PopoverContent className=" p-0 w-(--radix-popover-trigger-width)">
                         <Command>
-                          <CommandInput placeholder="search students...." />
-                          <CommandEmpty>"No Students"</CommandEmpty>
+                          <CommandInput placeholder="Search students..." />
+                          <CommandEmpty>No students found.</CommandEmpty>
                           <CommandGroup>
-                            {selectedClass?.students.map((student) => {
-                              console.log("student: ", student.name);
-                              return (
-                                <CommandItem
-                                  key={student.id}
-                                  value={student.name}
-                                  onSelect={() => {
-                                    const isSelected = field.value?.includes(
-                                      student.id
+                            {students.map((student) => (
+                              <CommandItem
+                                key={student.id}
+                                value={student.name}
+                                onSelect={() => {
+                                  const isSelected = field.value?.includes(
+                                    student.id
+                                  );
+                                  let newValue = field.value || [];
+                                  if (isSelected) {
+                                    newValue = newValue.filter(
+                                      (id: string) => id !== student.id
                                     );
-                                    let newValue = field.value || [];
-                                    if (isSelected) {
-                                      newValue = newValue.filter(
-                                        (id: string) => id !== student.id
-                                      );
-                                    } else {
-                                      newValue = [...newValue, student.id];
+                                  } else {
+                                    newValue = [...newValue, student.id];
+                                  }
+                                  field.onChange(newValue);
+                                }}
+                              >
+                                <div className="flex items-center space-x-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={
+                                      field.value?.includes(student.id) || false
                                     }
-                                    field.onChange(newValue);
-                                  }}
-                                >
-                                  <div className="flex items-center space-x-2">
-                                    <input
-                                      type="checkbox"
-                                      checked={
-                                        field.value?.includes(student.id) ||
-                                        false
-                                      }
-                                      readOnly
-                                      className="mr-2"
-                                    />
-                                    <span>{student.name}</span>
-                                  </div>
-                                </CommandItem>
-                              );
-                            })}
+                                    readOnly
+                                    className="mr-2"
+                                  />
+                                  <span>{student.name}</span>
+                                </div>
+                              </CommandItem>
+                            ))}
                           </CommandGroup>
                         </Command>
                       </PopoverContent>
                     </Popover>
+                  ) : (
+                    <FormControl>
+                      <Input
+                        placeholder="Enter student IDs (e.g., id1,id2,id3)"
+                        value={field.value?.join(",") || ""}
+                        onChange={(e) =>
+                          field.onChange(e.target.value.split(","))
+                        }
+                      />
+                    </FormControl>
                   )}
-
-                  {/* </FormControl> */}
                   <FormMessage />
                 </FormItem>
               )}

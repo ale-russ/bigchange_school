@@ -1,15 +1,16 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
-import { z } from "zod";
-import { Class } from "@/lib/types";
+import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { toast } from "sonner";
+import { z } from "zod";
+import { Class, Student } from "@/lib/types";
+import { useStudentManager } from "./useStudentManager";
 
 const classSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
   level: z.string().min(1, "Level is required"),
-  teacherId: z.string().min(1, "Teacher is required"),
+  teacherId: z.string().optional(), // Made optional
   studentIds: z.array(z.string()).optional(),
 });
 
@@ -17,36 +18,47 @@ type ClassFormValues = z.infer<typeof classSchema>;
 
 export function useClassManager(searchQuery: string) {
   const [classes, setClasses] = useState<Class[]>([]);
+  // const [students, setStudents] = useState<Student[]>([]);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  const { students, setStudents } = useStudentManager(searchQuery);
+
   const token = localStorage.getItem("token");
 
   const editForm = useForm<ClassFormValues>({
     resolver: zodResolver(classSchema),
     mode: "onSubmit",
-    defaultValues: { name: "", level: "", teacherId: "", studentIds: [] },
+    defaultValues: {
+      name: "",
+      level: "",
+      teacherId: "",
+      studentIds: [],
+    },
   });
 
   const createForm = useForm<ClassFormValues>({
     resolver: zodResolver(classSchema),
     mode: "onSubmit",
-    defaultValues: { name: "", level: "", teacherId: "", studentIds: [] },
+    defaultValues: {
+      name: "",
+      level: "",
+      teacherId: "",
+      studentIds: [],
+    },
   });
 
   useEffect(() => {
     const fetchClasses = async () => {
       setIsLoading(true);
-
       try {
         const response = await axios.get(
           `${process.env.NEXT_PUBLIC_SERVER_URL}/classes`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-
         setClasses(response.data);
       } catch (err: any) {
         toast.error("Failed to fetch classes: ", err);
@@ -54,7 +66,6 @@ export function useClassManager(searchQuery: string) {
         setIsLoading(false);
       }
     };
-
     fetchClasses();
   }, []);
 
@@ -63,7 +74,7 @@ export function useClassManager(searchQuery: string) {
     editForm.reset({
       name: classItem.name,
       level: classItem.level,
-      teacherId: classItem.teacher.id,
+      teacherId: classItem?.teacher ? classItem.teacher?.id : "",
       studentIds: classItem.students.map((student) => student.id),
     });
     setEditOpen(true);
@@ -79,29 +90,25 @@ export function useClassManager(searchQuery: string) {
     setIsLoading(true);
 
     try {
+      const payload = { ...data };
+      if (!payload.teacherId) delete payload.teacherId; // Remove if empty
       await axios.put(
         `${process.env.NEXT_PUBLIC_SERVER_URL}/classes/${selectedClass.id}`,
-        data,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      toast.success(`Updated ${data.name}`);
-
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_SEVER_URL}/classes`,
+        payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
+      toast.success(`Updated ${data.name}`);
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_SERVER_URL}/classes`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       setClasses(response.data);
       setEditOpen(false);
     } catch (err: any) {
       toast.error(
-        err.response.data?.message || `Failed to update ${selectedClass.name}`
+        err.response?.data?.message || `Failed to update ${selectedClass.name}`
       );
-      console.log("Update Error: ", err.response?.data);
+      console.error("Update error:", err.response?.data);
     } finally {
       setIsLoading(false);
     }
@@ -110,17 +117,11 @@ export function useClassManager(searchQuery: string) {
   const onDeleteConfirm = async () => {
     if (!selectedClass) return;
     setIsLoading(true);
-
     try {
       await axios.delete(
         `${process.env.NEXT_PUBLIC_SERVER_URL}/classes/${selectedClass.id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
       toast.success(`Deleted ${selectedClass.name}`);
       const response = await axios.get(
         `${process.env.NEXT_PUBLIC_SERVER_URL}/classes`,
@@ -128,10 +129,12 @@ export function useClassManager(searchQuery: string) {
       );
       setClasses(response.data);
       setDeleteOpen(false);
-    } catch (err: any) {
+    } catch (error: any) {
       toast.error(
-        err.response?.data?.message || `Failed to delete ${selectedClass.name}`
+        error.response?.data?.message ||
+          `Failed to delete ${selectedClass.name}`
       );
+      console.error("Delete error:", error.response?.data);
     } finally {
       setIsLoading(false);
     }
@@ -140,9 +143,11 @@ export function useClassManager(searchQuery: string) {
   const onCreateSubmit = async (data: ClassFormValues) => {
     setIsLoading(true);
     try {
+      const payload = { ...data };
+      if (!payload.teacherId) delete payload.teacherId; // Remove if empty
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_SERVER_URL}/classes`,
-        data,
+        payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success(`Created ${data.name}`);
@@ -161,16 +166,12 @@ export function useClassManager(searchQuery: string) {
     (classItem) =>
       classItem.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       classItem.level.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      classItem.teacher.name
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase()) ||
-      classItem.students.map((student) =>
-        student.name.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+      classItem.teacher.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return {
     classes: filteredClasses,
+    students,
     editOpen,
     deleteOpen,
     createOpen,
