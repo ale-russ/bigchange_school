@@ -121,7 +121,7 @@ export function EditModal({
                         <ChevronDown />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-full p-0">
+                    <PopoverContent className="w-(--radix-popover-trigger-width) p-0 p-0">
                       <Command>
                         <CommandInput placeholder="Search parent..." />
                         <CommandEmpty>No parent found.</CommandEmpty>
@@ -213,7 +213,7 @@ export function EditModal({
                         <ChevronDown />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-full p-0">
+                    <PopoverContent className="w-(--radix-popover-trigger-width) p-0 p-0">
                       <Command>
                         <CommandInput placeholder="Search class..." />
                         <CommandEmpty>No class found.</CommandEmpty>
@@ -268,10 +268,16 @@ export function CreateStudentModal({
   const [validateOnSubmit, setValidateOnSubmit] = React.useState(true);
 
   useEffect(() => {
-    if (open && !validateOnSubmit) {
+    if (!open) {
+      form.resetField("name");
+      form.resetField("phoneNumber");
+      form.resetField("parents");
+      form.resetField("level");
+      form.resetField("address");
+      form.resetField("classId");
       form.clearErrors(); //Clear errors when modal opens without validations
     }
-  }, [open, validateOnSubmit, form]);
+  }, [open, form]);
 
   const handleCreateParentClick = () => {
     setValidateOnSubmit(false); // Disable validation temporarily
@@ -341,7 +347,7 @@ export function CreateStudentModal({
                             <ChevronDown />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-full p-0">
+                        <PopoverContent className="w-(--radix-popover-trigger-width) p-0 p-0">
                           <Command>
                             <CommandInput placeholder="Search parent..." />
                             <CommandEmpty>No parent found.</CommandEmpty>
@@ -439,7 +445,7 @@ export function CreateStudentModal({
                         <ChevronDown />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-full p-0">
+                    <PopoverContent className="w-(--radix-popover-trigger-width) p-0 p-0">
                       <Command>
                         <CommandInput placeholder="Search class..." />
                         <CommandEmpty>No class found.</CommandEmpty>

@@ -43,7 +43,12 @@ export default function ClassManager({ searchQuery }: ClassManagerProps) {
   return (
     <>
       <div className="mb-4 flex justify-end items-center">
-        <Button onClick={() => setCreateOpen(true)}>Create Class</Button>
+        <Button
+          onClick={() => setCreateOpen(true)}
+          className="hover:cursor-pointer"
+        >
+          Create Class
+        </Button>
       </div>
       <Table>
         <TableHeader>

@@ -166,7 +166,12 @@ export function useClassManager(searchQuery: string) {
     (classItem) =>
       classItem.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       classItem.level.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      classItem.teacher.name.toLowerCase().includes(searchQuery.toLowerCase())
+      classItem.teacher.name
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      classItem.students.map((student) =>
+        student.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
   );
 
   return {

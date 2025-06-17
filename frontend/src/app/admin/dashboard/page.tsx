@@ -1,14 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@radix-ui/react-tabs";
 import TeacherManager from "@/components/admin/TeacherManager";
@@ -21,7 +12,7 @@ import ClassManager from "@/components/admin/ClassManager";
 
 export default function AdminDashboard() {
   const tabStyle =
-    " data-[state=active]:bg-gray-50 data-[state=active]:text-black data-[state=active]:border data-[state=active]:border-gray-300 rounded-md px-4 py-1 hover:cursor-pointer hover:bg-gray-100 transition-all duration-200 ease-in-out";
+    "data-[state=active]:bg-gray-50 data-[state=active]:text-black data-[state=active]:border data-[state=active]:border-gray-300 rounded-md px-4 py-1 hover:cursor-pointer hover:bg-gray-100 transition-all duration-200 ease-in-out";
 
   const [searchQuery, setSearchQuery] = useState("");
 

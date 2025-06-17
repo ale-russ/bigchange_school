@@ -56,7 +56,14 @@ export function CreateParentModal({
   onSubmit,
   isLoading,
 }: CreateParentModalProps) {
-  const handleCreateParentClick = () => {};
+  useEffect(() => {
+    if (!open) {
+      form.resetField("fullName");
+      form.resetField("phoneNumber");
+      form.resetField("address");
+      form.clearErrors();
+    }
+  }, [open, form]);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -105,11 +112,7 @@ export function CreateParentModal({
               )}
             />
             <DialogFooter>
-              <Button
-                type="submit"
-                disabled={isLoading}
-                onClick={() => onSubmit(form.getValues())}
-              >
+              <Button type="submit" disabled={isLoading}>
                 Create Parent
               </Button>
             </DialogFooter>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -56,6 +56,15 @@ export function ClassModal({
   students,
   users,
 }: ClassModalProps) {
+  useEffect(() => {
+    if (!open) {
+      form.resetField("name");
+      form.resetField("level");
+      form.resetField("teacherId");
+      form.resetField("studentIds");
+      form.clearErrors(); // Clear all errors
+    }
+  }, [open, form]);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
