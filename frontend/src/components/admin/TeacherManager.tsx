@@ -60,6 +60,7 @@ export default function TeacherManager({ searchQuery }: TeacherManagerProps) {
             <TableHead>Role</TableHead>
             <TableHead>Phone</TableHead>
             <TableHead>Address</TableHead>
+            <TableHead>Classes</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -79,6 +80,7 @@ export default function TeacherManager({ searchQuery }: TeacherManagerProps) {
                   <TableCell>{user.role}</TableCell>
                   <TableCell>{user.phoneNumber}</TableCell>
                   <TableCell>{user.address}</TableCell>
+                  <TableCell>{user.classes?.length}</TableCell>
                   <TableCell>
                     <Button
                       variant="outline"

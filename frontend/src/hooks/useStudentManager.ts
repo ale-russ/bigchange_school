@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -48,6 +48,11 @@ export function useStudentManager(searchQuery: string) {
   const [createParentOpen, setCreateParentOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc" | null>(null); //A-Z or Z-A
+  const [filterType, setFilterType] = useState<
+    "phoneNumber" | "address" | "level" | null
+  >(null); // Filter types
+  const [filterValue, setFilterValue] = useState<string>(""); //Filter value (e.g address or level)
 
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
@@ -297,8 +302,57 @@ export function useStudentManager(searchQuery: string) {
     }
   };
 
+  // Apply sorting and filtering to classes
+  const processedStudents = useMemo(() => {
+    let result = [...students];
+
+    // Apply sorting
+    if (sortOrder) {
+      result.sort((a, b) =>
+        sortOrder === "asc"
+          ? a.name.localeCompare(b.name)
+          : b.name.localeCompare(a.name)
+      );
+    }
+
+    // Apply filtering
+    if (filterType && filterType) {
+      result = result.filter((student) => {
+        switch (filterType) {
+          case "address":
+            return (
+              student.address
+                ?.toLowerCase()
+                .includes(filterValue.toLowerCase()) || false
+            );
+          case "level":
+            return student.level
+              ?.toLowerCase()
+              .includes(filterValue.toLowerCase());
+          case "phoneNumber":
+            return student.phoneNumber;
+        }
+      });
+    } else if (filterType === "phoneNumber") {
+      result = result.filter((student) => !!student.address);
+    }
+
+    return result.filter(
+      (student) =>
+        student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        student.address?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        student.class?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        student.phoneNumber
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        student.parentIds.map((parent) =>
+          parent.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+    );
+  }, [students, sortOrder, filterType, filterValue, searchQuery]);
+
   return {
-    students: filteredStudents,
+    students: processedStudents,
     classes,
     parents,
     editOpen,
@@ -310,6 +364,9 @@ export function useStudentManager(searchQuery: string) {
     editForm,
     createForm,
     createParentForm,
+    sortOrder,
+    filterType,
+    filterValue,
     handleEdit,
     handleDelete,
     onEditSubmit,
@@ -321,5 +378,8 @@ export function useStudentManager(searchQuery: string) {
     setCreateOpen,
     setCreateParentOpen,
     setStudents,
+    setSortOrder,
+    setFilterType,
+    setFilterValue,
   };
 }

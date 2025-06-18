@@ -56,6 +56,7 @@ export function CreateParentModal({
   onSubmit,
   isLoading,
 }: CreateParentModalProps) {
+  console.log("on create parent modal");
   useEffect(() => {
     if (!open) {
       form.resetField("fullName");

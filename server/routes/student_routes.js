@@ -15,6 +15,7 @@ router.get(
   async (req, res, next) => {
     try {
       const students = await Student.find().populate("classId", "name");
+      students.sort((a, b) => a.name.localeCompare(b.name));
       const formattedStudents = students.map((student) => ({
         id: student._id.toString(),
         name: student.name,
@@ -155,8 +156,8 @@ router.put(
     roleMiddleware(["admin", "teacher"]),
     body("name").notEmpty().withMessage("Name is required"),
     body("phoneNumber")
-      .optional()
-      .isMobilePhone("any")
+      .notEmpty()
+      // .isMobilePhone("any")
       .withMessage("Invalid phone number"),
     body("address").notEmpty().withMessage("Address is required"),
     body("level").optional().isString().withMessage("Level is required"),

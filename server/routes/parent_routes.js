@@ -18,6 +18,8 @@ router.get(
         "childrenIds",
         "name phoneNumber"
       );
+      // .select("name phoneNumber address children");
+      parents.sort((a, b) => a.fullName.localeCompare(b.fullName));
       const formattedParents = parents.map((parent) => ({
         id: parent._id.toString(),
         fullName: parent.fullName,
@@ -26,6 +28,7 @@ router.get(
         children: parent.childrenIds.map((child) => ({
           id: child._id.toString(),
           name: child.name,
+          phoneNumber: child.phoneNumber,
         })),
       }));
       res.status(200).json(formattedParents);

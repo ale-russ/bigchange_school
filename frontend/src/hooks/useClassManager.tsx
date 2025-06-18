@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
@@ -18,12 +18,16 @@ type ClassFormValues = z.infer<typeof classSchema>;
 
 export function useClassManager(searchQuery: string) {
   const [classes, setClasses] = useState<Class[]>([]);
-  // const [students, setStudents] = useState<Student[]>([]);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc" | null>(null); //A-Z or Z-A
+  const [filterType, setFilterType] = useState<
+    "phoneNumber" | "address" | "level" | null
+  >(null); // Filter types
+  const [filterValue, setFilterValue] = useState<string>(""); //Filter value (e.g address or level)
 
   const { students, setStudents } = useStudentManager(searchQuery);
 
@@ -174,8 +178,68 @@ export function useClassManager(searchQuery: string) {
       )
   );
 
+  // Apply sorting and filtering to classes
+  const processedClasses = useMemo(() => {
+    let result = [...classes];
+
+    // Apply sorting
+    if (sortOrder) {
+      result = result.map((classItem) => ({
+        ...classItem,
+        students: [...classItem.students].sort((a, b) =>
+          sortOrder === "asc"
+            ? a.name.localeCompare(b.name)
+            : b.name.localeCompare(a.name)
+        ),
+      }));
+    }
+
+    // Apply filtering
+    if (filterType && filterType) {
+      result = result.map((classItem) => ({
+        ...classItem,
+        students: classItem.students.filter((student) => {
+          switch (filterType) {
+            case "phoneNumber":
+              return !!student.phoneNumber; //filter by student phone number
+            case "address":
+              return (
+                !!student.address
+                  ?.toLowerCase()
+                  .includes(filterValue.toLowerCase()) || false
+              );
+            case "level":
+              return (
+                student.level?.toLowerCase() === filterValue.toLowerCase() ||
+                false
+              );
+            default:
+              return true;
+          }
+        }),
+      }));
+    } else if (filterType === "phoneNumber") {
+      result = result.map((classItem) => ({
+        ...classItem,
+        students: classItem.students.filter((student) => !!student.phoneNumber),
+      }));
+    }
+
+    return result.filter(
+      (classItem) =>
+        classItem.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        classItem.level.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        classItem.teacher.name
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        classItem.students.filter((student) =>
+          student.name.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+    );
+  }, [classes, sortOrder, filterType, filterValue, searchQuery]);
+
   return {
-    classes: filteredClasses,
+    classes: processedClasses,
     students,
     editOpen,
     deleteOpen,
@@ -184,6 +248,8 @@ export function useClassManager(searchQuery: string) {
     isLoading,
     editForm,
     createForm,
+    filterType,
+    filterValue,
     handleEdit,
     handleDelete,
     onEditSubmit,
@@ -192,5 +258,8 @@ export function useClassManager(searchQuery: string) {
     setEditOpen,
     setDeleteOpen,
     setCreateOpen,
+    setSortOrder,
+    setFilterType,
+    setFilterValue,
   };
 }

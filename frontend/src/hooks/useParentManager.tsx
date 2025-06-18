@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
@@ -29,7 +29,12 @@ export function useParentManager(searchQuery: string) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedParent, setSelectedParent] = useState<Parent | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc" | null>(null); // A-Z or Z-A
+  const [filterType, setFilterType] = useState<"address" | "children" | null>(
+    null
+  ); // Filter type
+  const [filterValue, setFilterValue] = useState<string>(""); // Filter value (e.g., address)
 
   const token = localStorage.getItem("token");
 
@@ -48,7 +53,6 @@ export function useParentManager(searchQuery: string) {
   useEffect(() => {
     const fetchParents = async () => {
       setIsLoading(true);
-
       try {
         const response = await axios.get(
           `${process.env.NEXT_PUBLIC_SERVER_URL}/parents`,
@@ -56,7 +60,6 @@ export function useParentManager(searchQuery: string) {
         );
 
         setParents(response.data);
-        console.log("parents; ", parents);
       } catch (err: any) {
         toast.error("Failed to fetch: ", err);
       } finally {
@@ -143,6 +146,7 @@ export function useParentManager(searchQuery: string) {
   };
 
   const onCreateSubmit = async (data: ParentFormValues) => {
+    console.log("button clicked: ", data);
     setIsLoading(true);
     try {
       const response = await axios.post(
@@ -184,8 +188,46 @@ export function useParentManager(searchQuery: string) {
       )
   );
 
+  // Apply sorting and filtering
+  const processedParents = useMemo(() => {
+    let result = [...parents];
+
+    // Apply sorting
+    if (sortOrder) {
+      result.sort((a, b) =>
+        sortOrder === "asc"
+          ? a.fullName.localeCompare(b.fullName)
+          : b.fullName.localeCompare(a.fullName)
+      );
+    }
+
+    // Apply filtering
+    if (filterType && filterValue) {
+      result = result.filter((parent) => {
+        switch (filterType) {
+          case "address":
+            return (
+              parent.address
+                ?.toLowerCase()
+                .includes(filterValue.toLowerCase()) || false
+            );
+          case "children":
+            const numChildren = parent?.children?.length || 0;
+            return numChildren.toString() === filterValue;
+          default:
+            return true;
+        }
+      });
+    } else if (filterType === "address") {
+      result = result.filter((parent) => !!parent.address);
+    }
+    return result.filter((parent) =>
+      parent.fullName.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [parents, sortOrder, filterType, filterValue, searchQuery]);
+
   return {
-    parents: filteredParents,
+    parents: processedParents,
     editOpen,
     deleteOpen,
     createOpen,
@@ -193,6 +235,9 @@ export function useParentManager(searchQuery: string) {
     isLoading,
     editForm,
     createForm,
+    sortOrder,
+    filterType,
+    filterValue,
     handleEdit,
     handleDelete,
     onEditSubmit,
@@ -201,5 +246,8 @@ export function useParentManager(searchQuery: string) {
     setEditOpen,
     setDeleteOpen,
     setCreateOpen,
+    setSortOrder,
+    setFilterType,
+    setFilterValue,
   };
 }

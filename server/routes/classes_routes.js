@@ -23,7 +23,8 @@ router.get(
         id: cls._id.toString(),
         name: cls.name,
         level: cls.level,
-        teacherId: cls.teacherId ? cls.teacherId._id.toString() : null,
+        classes: cls?.classes ?? [],
+        // teacherId: cls.teacherId ? cls.teacherId._id.toString() : null,
         teacher: cls.teacherId
           ? {
               id: cls.teacherId._id.toString(),
@@ -32,7 +33,7 @@ router.get(
               phoneNumber: cls.teacherId.phoneNumber,
             }
           : null,
-        studentIds: cls.studentIds.map((s) => s._id.toString()),
+        // studentIds: cls.studentIds.map((s) => s._id.toString()),
         students: cls.studentIds.map((s) => ({
           id: s._id.toString(),
           name: s.name,
@@ -55,7 +56,7 @@ router.post(
   async (req, res, next) => {
     console.log("in create class route", req.body);
     try {
-      const { name, teacherId, studentIds } = req.body;
+      const { name, teacherId, studentIds, level } = req.body;
 
       if (!name)
         return res
@@ -71,7 +72,12 @@ router.post(
         if (!teacher)
           return res.status(400).json({ message: "Teacher not found" });
 
-        teacherIdVale = teacher._id;
+        teacherIdValue = teacher._id;
+        teacher.classes = teacher.classes || [];
+        if (!teacher.classes.includes(teacherIdValue)) {
+          teacher.classes.push(teacherIdValue);
+          await teacher.save();
+        }
       }
 
       const students = studentIds?.length
@@ -88,6 +94,7 @@ router.post(
         teacher: teacher || {},
         teacherId: teacherIdValue,
         students: studentIds || [],
+        level: level,
       });
 
       await newClass.save();
@@ -107,6 +114,7 @@ router.post(
       res.status(200).json({
         id: populatedClass._id.toString(),
         name: populatedClass.name,
+        level: populatedClass.level,
         teacher: populatedClass.teacherId
           ? {
               id: populatedClass.teacherId._id.toString(),
@@ -142,15 +150,42 @@ router.put(
   async (req, res, next) => {
     try {
       const { id } = req.params;
-      console.log("id: ", id);
-      console.log("body: ", req.body);
       const { name, teacherId, studentIds, level } = req.body;
       console.log("body: ", name, teacherId, studentIds, level);
+
+      // Get the existing class to check previous teacher
+      const existingClass = await ClassModel.findById(id);
+      if (!existingClass)
+        return res.status(404).json({ message: "Class not found" });
 
       const teacher = await User.findOne({ _id: teacherId, role: "teacher" });
       console.log("teacher: ", teacher);
       if (!teacher)
         return res.status(400).json({ message: "No teacher found" });
+
+      // Update teacher's classes array
+      teacher.classes = teacher.classes || [];
+      if (
+        !teacher.classes.includes(id) &&
+        teacherId !== existingClass.teacherId?.toString()
+      ) {
+        teacher.classes.push(id);
+        await teacher.save();
+      }
+
+      // Remove class from previous teacher's classes if teacher changed
+      if (
+        existingClass.teacherId &&
+        (!teacherId || teacherId !== existingClass.teacherId.toString())
+      ) {
+        const previousTeacher = await User.findById(existingClass.teacherId);
+        if (previousTeacher) {
+          previousTeacher.classes = previousTeacher.classes.filter(
+            (classId) => classId.toString() !== id
+          );
+          await previousTeacher.save();
+        }
+      }
 
       const students = studentIds?.length
         ? await Student.find({ _id: { $in: studentIds } })

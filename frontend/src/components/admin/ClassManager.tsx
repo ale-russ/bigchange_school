@@ -7,12 +7,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { useClassManager } from "@/hooks/useClassManager";
 import Loader from "@/components/common/Loader";
 import { ClassModal } from "./modals/ClassModal";
 import { DeleteModal } from "./modals/DeleteModal";
 import { useTeacherManager } from "@/hooks/useTeacherManager";
+import { Input } from "../ui/input";
 
 interface ClassManagerProps {
   searchQuery: string;
@@ -29,6 +37,8 @@ export default function ClassManager({ searchQuery }: ClassManagerProps) {
     isLoading,
     editForm,
     createForm,
+    filterType,
+    filterValue,
     handleEdit,
     handleDelete,
     onEditSubmit,
@@ -37,12 +47,55 @@ export default function ClassManager({ searchQuery }: ClassManagerProps) {
     setEditOpen,
     setDeleteOpen,
     setCreateOpen,
+    setSortOrder,
+    setFilterType,
+    setFilterValue,
   } = useClassManager(searchQuery);
   const { users } = useTeacherManager(searchQuery);
 
+  const handleSortChange = (value: string) => {
+    setSortOrder(value as "asc" | "desc" | null);
+  };
+
+  const handleFilterTypeChange = (value: string) => {
+    setFilterType(value as "phoneNumber" | "address" | "level" | null);
+    setFilterValue(""); // Reset filter value when changing types
+  };
+
   return (
     <>
-      <div className="mb-4 flex justify-end items-center">
+      <div className="mb-4 flex justify-between items-center pt-4">
+        <div className="flex gap-4">
+          {/* <Select onValueChange={handleSortChange} defaultValue="">
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Sort by Name" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="asc">A-Z</SelectItem>
+              <SelectItem value="desc">Z-A</SelectItem>
+              <SelectItem value="none">None</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select onValueChange={handleFilterTypeChange} defaultValue="">
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="phone">Has Phone</SelectItem>
+              <SelectItem value="address">Address</SelectItem>
+              <SelectItem value="level">Level</SelectItem>
+              <SelectItem value="none">None</SelectItem>
+            </SelectContent>
+          </Select>
+          {filterType && filterType !== "phoneNumber" && (
+            <Input
+              placeholder={`Enter ${filterType}...`}
+              value={filterValue}
+              onChange={(e) => setFilterValue(e.target.value)}
+              className="w-[200px]"
+            />
+          )} */}
+        </div>
         <Button
           onClick={() => setCreateOpen(true)}
           className="hover:cursor-pointer"
@@ -74,9 +127,10 @@ export default function ClassManager({ searchQuery }: ClassManagerProps) {
                 <TableCell>{classItem.level}</TableCell>
                 <TableCell>{classItem.teacher?.name ?? "N/A"}</TableCell>
                 <TableCell>
-                  {classItem.students
+                  {/* {classItem.students
                     .map((student) => student.name)
-                    .join(", ") || "None"}
+                    .join(", ") || "None"} */}
+                  {classItem.students.length ?? "None"}
                 </TableCell>
                 <TableCell>
                   <Button

@@ -121,7 +121,7 @@ export function EditModal({
                         <ChevronDown />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-(--radix-popover-trigger-width) p-0 p-0">
+                    <PopoverContent className="w-(--radix-popover-trigger-width) p-0 ">
                       <Command>
                         <CommandInput placeholder="Search parent..." />
                         <CommandEmpty>No parent found.</CommandEmpty>
@@ -213,7 +213,7 @@ export function EditModal({
                         <ChevronDown />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-(--radix-popover-trigger-width) p-0 p-0">
+                    <PopoverContent className="w-(--radix-popover-trigger-width) p-0 ">
                       <Command>
                         <CommandInput placeholder="Search class..." />
                         <CommandEmpty>No class found.</CommandEmpty>
@@ -347,7 +347,7 @@ export function CreateStudentModal({
                             <ChevronDown />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-(--radix-popover-trigger-width) p-0 p-0">
+                        <PopoverContent className="w-(--radix-popover-trigger-width) p-0">
                           <Command>
                             <CommandInput placeholder="Search parent..." />
                             <CommandEmpty>No parent found.</CommandEmpty>
@@ -445,7 +445,7 @@ export function CreateStudentModal({
                         <ChevronDown />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-(--radix-popover-trigger-width) p-0 p-0">
+                    <PopoverContent className="w-(--radix-popover-trigger-width) p-0">
                       <Command>
                         <CommandInput placeholder="Search class..." />
                         <CommandEmpty>No class found.</CommandEmpty>

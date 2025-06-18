@@ -7,12 +7,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 
 import { useParentManager } from "@/hooks/useParentManager";
 import Loader from "@/components/common/Loader";
 import { CreateParentModal, EditModal } from "./modals/ParentModal";
 import { DeleteModal } from "./modals/DeleteModal";
+import { Input } from "../ui/input";
 
 interface ParentManagerProps {
   searchQuery: string;
@@ -28,6 +36,9 @@ export default function ParentManager({ searchQuery }: ParentManagerProps) {
     isLoading,
     editForm,
     createForm,
+    sortOrder,
+    filterType,
+    filterValue,
     handleEdit,
     handleDelete,
     onEditSubmit,
@@ -36,11 +47,57 @@ export default function ParentManager({ searchQuery }: ParentManagerProps) {
     setEditOpen,
     setDeleteOpen,
     setCreateOpen,
+    setFilterType,
+    setFilterValue,
+    setSortOrder,
   } = useParentManager(searchQuery);
+
+  const handleSortChange = (value: string) => {
+    setSortOrder(value as "asc" | "desc" | null);
+  };
+
+  const handleFilterTypeChange = (value: string) => {
+    setFilterType(value as "address" | "children" | null);
+    setFilterValue(""); // Reset filter value when changing type
+  };
 
   return (
     <>
-      <div className="mb-4 flex justify-end items-center">
+      <div className="mb-4 flex justify-between items-center pt-4">
+        <div className="flex gap-4">
+          <Select onValueChange={handleSortChange} defaultValue="">
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Sort by Name" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="asc">A-Z</SelectItem>
+              <SelectItem value="desc">Z-A</SelectItem>
+              <SelectItem value="none">None</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select onValueChange={handleFilterTypeChange} defaultValue="">
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by" />
+            </SelectTrigger>
+            <SelectContent>
+              {/* <SelectItem value="phone">Has Phone</SelectItem> */}
+              <SelectItem value="address">Address</SelectItem>
+              <SelectItem value="children">Children</SelectItem>
+              <SelectItem value="none">None</SelectItem>
+            </SelectContent>
+          </Select>
+          {filterType && (
+            <Input
+              placeholder={`Enter ${
+                filterType === "address" ? "address" : "number of children"
+              } ...`}
+              value={filterValue}
+              onChange={(e) => setFilterValue(e.target.value)}
+              className="w-[200px]"
+              type={filterType === "children" ? "number" : "text"}
+            />
+          )}
+        </div>
         <Button onClick={() => setCreateOpen(true)}>Create Parent</Button>
       </div>
       <Table>
@@ -67,11 +124,10 @@ export default function ParentManager({ searchQuery }: ParentManagerProps) {
                 <TableCell>{parent.phoneNumber}</TableCell>
                 <TableCell>{parent.address}</TableCell>
                 {!parent.children?.length && <TableCell></TableCell>}
-                {parent.children?.map((child) => (
-                  <TableCell key={child.id}>
-                    {child.name || "Not AVailable"}
-                  </TableCell>
-                ))}
+                <TableCell>
+                  {parent.children &&
+                    parent.children.map((child) => child.name).join(", ")}
+                </TableCell>
                 <TableCell>
                   <Button
                     variant="outline"

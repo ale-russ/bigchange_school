@@ -6,6 +6,7 @@ export interface User {
   token?: string;
   phoneNumber?: string;
   address?: string;
+  classes?: [];
 }
 
 export interface Student {
@@ -24,7 +25,7 @@ export interface Parent {
   email?: string;
   phoneNumber?: string;
   address?: string;
-  children?: [{ id: string; name: string }] | null;
+  children: { id: string; name: string; phoneNumber?: string }[];
 }
 
 export interface Class {
@@ -32,7 +33,8 @@ export interface Class {
   name: string;
   level: string;
   teacher: { id: string; name: string; email: string; phoneNumber: string };
-  students: { id: string; name: string }[];
+  // students: { id: string; name: string }[];
+  students: Student[];
 }
 
 export interface Session {

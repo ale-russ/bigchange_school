@@ -170,14 +170,14 @@ export function ClassModal({
                           variant="outline"
                           className="w-full justify-between"
                         >
-                          {field.value && field.value.length > 0
-                            ? students
-                                .filter((student) =>
-                                  field.value.includes(student.id)
-                                )
-                                .map((student) => student.name)
-                                .join(", ")
-                            : "Select students"}
+                          {field.value && field.value.length > 0 ? (
+                            <p>
+                              {selectedClass.students.length} Student
+                              {selectedClass.students.length === 1 ? "" : "s"}
+                            </p>
+                          ) : (
+                            "Select students"
+                          )}
                           <ChevronDown />
                         </Button>
                       </PopoverTrigger>
