@@ -146,7 +146,6 @@ export function useParentManager(searchQuery: string) {
   };
 
   const onCreateSubmit = async (data: ParentFormValues) => {
-    console.log("button clicked: ", data);
     setIsLoading(true);
     try {
       const response = await axios.post(
@@ -221,8 +220,14 @@ export function useParentManager(searchQuery: string) {
     } else if (filterType === "address") {
       result = result.filter((parent) => !!parent.address);
     }
-    return result.filter((parent) =>
-      parent.fullName.toLowerCase().includes(searchQuery.toLowerCase())
+    return result.filter(
+      (parent) =>
+        parent.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        parent.address?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        parent.phoneNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        parent.children.some((child) =>
+          child.name.toLowerCase().includes(searchQuery.toLowerCase())
+        )
     );
   }, [parents, sortOrder, filterType, filterValue, searchQuery]);
 

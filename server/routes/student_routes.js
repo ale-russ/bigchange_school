@@ -14,7 +14,10 @@ router.get(
   [authMiddleware, roleMiddleware(["admin"])],
   async (req, res, next) => {
     try {
-      const students = await Student.find().populate("classId", "name");
+      const students = await Student.find()
+        .populate("classId", "name")
+        .populate("parentIds", "fullName phoneNumber");
+      console.log("students: ", students);
       students.sort((a, b) => a.name.localeCompare(b.name));
       const formattedStudents = students.map((student) => ({
         id: student._id.toString(),
@@ -25,10 +28,10 @@ router.get(
           ? { id: student.classId._id.toString(), name: student.classId.name }
           : null,
         level: student.level,
-        parentIds: student.parentIds.map((p) => p._id.toString()),
-        children: student.parentIds.map((p) => ({
+        parentIds: student.parentIds.map((p) => ({
           id: p._id.toString(),
-          name: p.fullName,
+          fullName: p.fullName,
+          phoneNumber: p.phoneNumber,
         })),
       }));
       res.status(200).json(formattedStudents);
@@ -53,7 +56,6 @@ router.post(
       .withMessage("At least one parent ID is required"),
   ],
   async (req, res, next) => {
-    console.log("in create student route: ", req.body);
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty())
@@ -120,8 +122,6 @@ router.post(
       const populatedStudent = await Student.findById(student._id)
         .populate("classId", "name teacherId")
         .populate("parentIds", "fullname phoneNumber address");
-
-      console.log("populatedStudent: ", populatedStudent);
       const formattedStudent = {
         id: populatedStudent._id.toString(),
         name: populatedStudent.name,
@@ -169,7 +169,6 @@ router.put(
   async (req, res, next) => {
     try {
       const errors = validationResult(req);
-      console.log("error: ", errors);
       if (!errors.isEmpty())
         return res.status(400).json({ errors: errors.array() });
 

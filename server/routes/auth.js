@@ -34,15 +34,13 @@ router.post(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      console.log("body: ", req.body)
       const { name, email, password, role, phoneNumber, address } = req.body;
-
 
       // Check if user already exists
       const existingUser = await User.findOne({
         $or: [{ email }, { phoneNumber }],
       });
-      console.log(`Existing user: ${existingUser}`);
+
       if (existingUser)
         return res.status(400).json({ message: "User Already Registered" });
 

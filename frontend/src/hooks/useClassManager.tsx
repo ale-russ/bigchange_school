@@ -229,12 +229,11 @@ export function useClassManager(searchQuery: string) {
       (classItem) =>
         classItem.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         classItem.level.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        classItem.teacher.name
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        classItem.students.filter((student) =>
-          student.name.toLowerCase().includes(searchQuery.toLowerCase())
-        )
+        classItem.teacher.name.toLowerCase().includes(searchQuery.toLowerCase())
+      //  ||
+      // classItem.students.some((student) =>
+      //   student.name.toLowerCase().includes(searchQuery.toLowerCase())
+      // )
     );
   }, [classes, sortOrder, filterType, filterValue, searchQuery]);
 

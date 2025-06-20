@@ -18,7 +18,7 @@ router.get(
       const classes = await ClassModel.find()
         .populate("teacherId", "name email phoneNumber role")
         .populate("studentIds", "name phoneNumber address level");
-      console.log("classes: ", classes);
+
       const formattedClasses = classes.map((cls) => ({
         id: cls._id.toString(),
         name: cls.name,
@@ -54,7 +54,6 @@ router.post(
   "/",
   [authMiddleware, roleMiddleware(["admin", "teacher"])],
   async (req, res, next) => {
-    console.log("in create class route", req.body);
     try {
       const { name, teacherId, studentIds, level } = req.body;
 
@@ -67,7 +66,6 @@ router.post(
       let teacherIdValue = null;
       if (teacherId) {
         const teacher = await User.findOne({ _id: teacherId, role: "teacher" });
-        console.log("TEacher: ", teacher);
 
         if (!teacher)
           return res.status(400).json({ message: "Teacher not found" });
@@ -151,7 +149,6 @@ router.put(
     try {
       const { id } = req.params;
       const { name, teacherId, studentIds, level } = req.body;
-      console.log("body: ", name, teacherId, studentIds, level);
 
       // Get the existing class to check previous teacher
       const existingClass = await ClassModel.findById(id);
@@ -159,7 +156,7 @@ router.put(
         return res.status(404).json({ message: "Class not found" });
 
       const teacher = await User.findOne({ _id: teacherId, role: "teacher" });
-      console.log("teacher: ", teacher);
+
       if (!teacher)
         return res.status(400).json({ message: "No teacher found" });
 
@@ -212,8 +209,6 @@ router.put(
 
       if (studentIds?.length)
         await Student.updateMany({ _id: { $in: studentIds } }, { class: id });
-
-      console.log("Updated class: ", updatedClass);
 
       res.status(200).json({
         id: updatedClass._id.toString(),

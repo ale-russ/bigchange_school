@@ -133,7 +133,10 @@ export default function StudentManager({ searchQuery }: StudentManagerProps) {
                 <TableCell>{student.phoneNumber || "N/A"}</TableCell>
                 <TableCell>
                   {student.parentIds
-                    .map((id) => parents.find((p) => p.id === id)?.fullName)
+                    .map((parent) => {
+                      console.log("parent: ", parent);
+                      return parent.fullName;
+                    })
                     .filter(Boolean)
                     .join(", ") || "N/A"}
                 </TableCell>

@@ -126,7 +126,7 @@ export function useStudentManager(searchQuery: string) {
     editForm.reset({
       name: student.name,
       phoneNumber: student.phoneNumber || "",
-      parents: student.parentIds || [],
+      parents: (student.parentIds || []).map((parent) => parent.id),
       level: student.level || "",
       address: student.address || "",
       classId: student.class?.id || "",
@@ -143,7 +143,6 @@ export function useStudentManager(searchQuery: string) {
     if (!selectedStudent) return;
     setIsLoading(true);
     try {
-      console.log("Submitting data:", data); // Debug payload
       await axios.put(
         `${process.env.NEXT_PUBLIC_SERVER_URL}/students/${selectedStudent.id}`,
         {
@@ -213,17 +212,16 @@ export function useStudentManager(searchQuery: string) {
         .toLowerCase()
         .includes(searchQuery.toLowerCase()) ||
       (student.parentIds || []).some((parentId) =>
-        parentId.toLowerCase().includes(searchQuery.toLowerCase())
+        parentId.fullName.toLowerCase().includes(searchQuery.toLowerCase())
       )
   );
 
   const onCreateSubmit = async (data: EditFormValues) => {
-    console.log("create Student data: ", data);
     setIsLoading(true);
 
     try {
       let parentIds = data.parents;
-      console.log("parentIds: ", parentIds.length);
+
       if (parentIds.length === 0) {
         // Create a new parent if none is selected
         const newParent = {
@@ -231,8 +229,6 @@ export function useStudentManager(searchQuery: string) {
           phoneNumber: "",
           address: "",
         };
-
-        console.log("Parent: ", newParent);
 
         const parentResponse = await axios.post(
           `${process.env.NEXT_PUBLIC_SERVER_URL}/parents`,
@@ -248,8 +244,6 @@ export function useStudentManager(searchQuery: string) {
           parentIds,
           class: data?.classId ? { id: data.classId } : null,
         };
-
-        console.log("submitting create data", studentData);
 
         const response = await axios.post(
           `${process.env.NEXT_PUBLIC_SERVER_URL}/students`,
@@ -270,7 +264,6 @@ export function useStudentManager(searchQuery: string) {
         });
       }
     } catch (err: any) {
-      console.log("Error: ", err);
       toast.error(err.response?.data?.message || "Failed to create student");
     } finally {
       setIsLoading(false);
@@ -278,9 +271,8 @@ export function useStudentManager(searchQuery: string) {
   };
 
   const onCreateParentSubmit = async (data: ParentFormValues) => {
-    console.log("in create parent function");
     // setIsLoading(true);
-    console.log("data: ", data);
+
     try {
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_SERVER_URL}/parents`,
@@ -337,6 +329,13 @@ export function useStudentManager(searchQuery: string) {
       result = result.filter((student) => !!student.address);
     }
 
+    console.log(
+      "filtered parent",
+      students.filter((student) =>
+        student.parentIds.some((parent) => `${parent}`)
+      )
+    );
+
     return result.filter(
       (student) =>
         student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -345,12 +344,12 @@ export function useStudentManager(searchQuery: string) {
         student.phoneNumber
           ?.toLowerCase()
           .includes(searchQuery.toLowerCase()) ||
-        student.parentIds.map((parent) =>
-          parent.toLowerCase().includes(searchQuery.toLowerCase())
+        student.parentIds.some((parent) =>
+          parent.fullName.toLowerCase().includes(searchQuery.toLowerCase())
         )
     );
   }, [students, sortOrder, filterType, filterValue, searchQuery]);
-
+  console.log("student: ", students);
   return {
     students: processedStudents,
     classes,

@@ -56,7 +56,6 @@ export function CreateParentModal({
   onSubmit,
   isLoading,
 }: CreateParentModalProps) {
-  console.log("on create parent modal");
   useEffect(() => {
     if (!open) {
       form.resetField("fullName");
@@ -132,8 +131,6 @@ export function EditModal({
   isLoading,
   selectedParent,
 }: EditModalProps) {
-  console.log("selectedParent: ", selectedParent);
-
   if (!form.control) {
     console.error("Form control is undefined");
     return null;
@@ -179,12 +176,6 @@ export function EditModal({
               control={form.control}
               name="children"
               render={({ field }) => {
-                console.log("Field value:", field.value);
-                console.log(
-                  "Selected parent children: ",
-                  selectedParent?.children
-                );
-
                 const children = selectedParent?.children || [];
                 if (!selectedParent?.children)
                   return <p>No children available</p>;
@@ -211,7 +202,6 @@ export function EditModal({
                           </CommandEmpty>
                           <CommandGroup>
                             {children?.map((child) => {
-                              console.log("child: ", child);
                               return (
                                 <CommandItem
                                   key={child.id}

@@ -110,7 +110,6 @@ export function useTeacherManager(searchQuery: string) {
       );
       // Refresh data (e.g., refetch from API)
     } catch (error: any) {
-      console.log("Error: ", error);
       toast.error(
         error.response?.data?.message ||
           `Failed to update ${selectedTeacher.name}`
