@@ -11,13 +11,12 @@ const router = express.Router();
 // Get all students (admin - only)
 router.get(
   "/",
-  [authMiddleware, roleMiddleware(["admin"])],
+  [authMiddleware, roleMiddleware(["admin", "teacher"])],
   async (req, res, next) => {
     try {
       const students = await Student.find()
         .populate("classId", "name")
         .populate("parentIds", "fullName phoneNumber");
-      console.log("students: ", students);
       students.sort((a, b) => a.name.localeCompare(b.name));
       const formattedStudents = students.map((student) => ({
         id: student._id.toString(),

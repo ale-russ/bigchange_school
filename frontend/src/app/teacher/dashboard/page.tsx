@@ -10,89 +10,78 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Class } from "@/lib/types";
+import { Class, Student } from "@/lib/types";
 import { toast } from "sonner";
 import ProtectedRoutes from "@/components/ProtectedRoutes";
+import { useTeacherDashboard } from "@/hooks/useTeacherDashboard";
+import Loader from "@/components/common/Loader";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-// Mock data (replace with API call)
-const mockClasses: Class[] = [
-  {
-    classId: "class1",
-    name: "Math 101",
-    teacherId: "teacher1",
-    studentIds: ["1", "2"],
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    classId: "class2",
-    name: "Science 102",
-    teacherId: "teacher1",
-    studentIds: ["3"],
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-];
+interface TeacherDashboardProps {
+  teacherId: string;
+}
 
-export default function TeacherDashboard() {
-  const handleRemoveStudent = (studentId: string, classId: string) => {
-    toast("Student removed");
-  };
+export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
+  const { dashboardData, isLoading } = useTeacherDashboard(teacherId);
 
-  const handleEditStudent = (studentId: string) => {
-    toast("Edit student functionality not implemented yet");
-  };
+  // if (isLoading) {
+  //   return <Loader />;
+  // }
 
   return (
-    <ProtectedRoutes allowedRole="teacher">
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold">Teacher Dashboard</h1>
-        {mockClasses.length === 0 ? (
-          <p>No classes assigned.</p>
-        ) : (
-          mockClasses.map((classItem) => (
-            <Card key={classItem.classId}>
-              <CardHeader>
-                <CardTitle>{classItem.name}</CardTitle>
-              </CardHeader>
-              <CardContent>
+    <div className="p-4">
+      <h2 className="text-2xl font-bold mb-4">
+        Teacher Dashboard - Total Classes: {dashboardData.totalClasses}
+      </h2>
+      {dashboardData.totalClasses > 0 ? (
+        <>
+          <Tabs defaultValue={dashboardData.classes[0]?.id} className="w-full">
+            <TabsList>
+              {dashboardData.classes.map((cls) => (
+                <TabsTrigger key={cls.id} value={cls.id}>
+                  {cls.name}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            {dashboardData.classes.map((cls) => (
+              <TabsContent key={cls.id} value={cls.id}>
+                <h3 className="text-xl font-semibold mb-2">
+                  Class: {cls.name} - Students:{" "}
+                  {dashboardData.studentsByClass[cls.id]?.length || 0}
+                </h3>
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Student Name</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead>Phone Number</TableHead>
+                      <TableHead>Address</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {classItem.studentIds.map((studentId) => (
-                      <TableRow key={studentId}>
-                        <TableCell>Student {studentId}</TableCell>
-                        <TableCell>
-                          <Button
-                            variant="outline"
-                            className="mr-2"
-                            onClick={() => handleEditStudent(studentId)}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            onClick={() =>
-                              handleRemoveStudent(studentId, classItem.classId)
-                            }
-                          >
-                            Remove
-                          </Button>
+                    {dashboardData.studentsByClass[cls.id]?.length > 0 ? (
+                      dashboardData.studentsByClass[cls.id].map((student) => (
+                        <TableRow key={student.id}>
+                          <TableCell>{student.name}</TableCell>
+                          <TableCell>{student.phoneNumber || "N/A"}</TableCell>
+                          <TableCell>{student.address || "N/A"}</TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={3}>
+                          No students in this class.
                         </TableCell>
                       </TableRow>
-                    ))}
+                    )}
                   </TableBody>
                 </Table>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
-    </ProtectedRoutes>
+              </TabsContent>
+            ))}
+          </Tabs>
+        </>
+      ) : (
+        <></>
+      )}
+    </div>
   );
 }

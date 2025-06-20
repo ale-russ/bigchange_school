@@ -23,7 +23,6 @@ export interface Student {
 export interface Parent {
   id: string;
   fullName: string;
-  email?: string;
   phoneNumber?: string;
   address?: string;
   children: { id: string; name: string; phoneNumber?: string }[];
@@ -33,8 +32,9 @@ export interface Class {
   id: string;
   name: string;
   level: string;
+  teacherId?: string;
   teacher: { id: string; name: string; email: string; phoneNumber: string };
-  // students: { id: string; name: string }[];
+  studentIds?: string[];
   students: Student[];
 }
 
@@ -51,4 +51,10 @@ export interface Credentials {
   isSignup?: boolean;
   phoneNumber?: string;
   address?: string;
+}
+
+export interface TeacherDashboardData {
+  classes: Class[];
+  totalClasses: number;
+  studentsByClass: { [classId: string]: Student[] };
 }

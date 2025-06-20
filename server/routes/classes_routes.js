@@ -12,7 +12,7 @@ const router = express.Router();
 // Get all classes (admin or teacher)
 router.get(
   "/",
-  [authMiddleware, roleMiddleware(["admin"])],
+  [authMiddleware, roleMiddleware(["admin", "teacher"])],
   async (req, res, next) => {
     try {
       const classes = await ClassModel.find()
