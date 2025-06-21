@@ -16,7 +16,6 @@ export interface Student {
   address?: string;
   level?: string;
   class?: { id: string; name: string } | null;
-  // parentIds: string[];
   parentIds: Parent[];
 }
 
