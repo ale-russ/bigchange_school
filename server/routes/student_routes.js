@@ -11,10 +11,13 @@ const router = express.Router();
 // Get all students (admin - only)
 router.get(
   "/",
-  [authMiddleware, roleMiddleware(["admin"])],
+  [authMiddleware, roleMiddleware(["admin", "teacher"])],
   async (req, res, next) => {
     try {
-      const students = await Student.find().populate("classId", "name");
+      const students = await Student.find()
+        .populate("classId", "name")
+        .populate("parentIds", "fullName phoneNumber");
+      students.sort((a, b) => a.name.localeCompare(b.name));
       const formattedStudents = students.map((student) => ({
         id: student._id.toString(),
         name: student.name,
@@ -24,10 +27,10 @@ router.get(
           ? { id: student.classId._id.toString(), name: student.classId.name }
           : null,
         level: student.level,
-        parentIds: student.parentIds.map((p) => p._id.toString()),
-        children: student.parentIds.map((p) => ({
+        parentIds: student.parentIds.map((p) => ({
           id: p._id.toString(),
-          name: p.fullName,
+          fullName: p.fullName,
+          phoneNumber: p.phoneNumber,
         })),
       }));
       res.status(200).json(formattedStudents);
@@ -44,9 +47,7 @@ router.post(
     authMiddleware,
     roleMiddleware(["admin", "teacher"]),
     body("name").notEmpty().withMessage("Name is required"),
-    body("phoneNumber")
-      .isMobilePhone("any")
-      .withMessage("Phone number is required"),
+    body("phoneNumber").notEmpty().withMessage("Phone number is required"),
     body("address").isString().withMessage("Invalid Address"),
     body("level").optional().isString().withMessage("Invalid Level"),
     body("parentIds")
@@ -120,8 +121,6 @@ router.post(
       const populatedStudent = await Student.findById(student._id)
         .populate("classId", "name teacherId")
         .populate("parentIds", "fullname phoneNumber address");
-
-      console.log("populatedStudent: ", populatedStudent);
       const formattedStudent = {
         id: populatedStudent._id.toString(),
         name: populatedStudent.name,
@@ -143,7 +142,6 @@ router.post(
       };
       res.status(201).json(formattedStudent);
     } catch (err) {
-      console.log("Error: ", err);
       return res.status(500).json({ message: "Internal Server Error" });
     }
   }
@@ -157,8 +155,8 @@ router.put(
     roleMiddleware(["admin", "teacher"]),
     body("name").notEmpty().withMessage("Name is required"),
     body("phoneNumber")
-      .optional()
-      .isMobilePhone("any")
+      .notEmpty()
+      // .isMobilePhone("any")
       .withMessage("Invalid phone number"),
     body("address").notEmpty().withMessage("Address is required"),
     body("level").optional().isString().withMessage("Level is required"),

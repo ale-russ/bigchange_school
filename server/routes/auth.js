@@ -19,7 +19,7 @@ router.post(
       .isLength({ min: 6 }),
     body("phoneNumber")
       .notEmpty()
-      .isMobilePhone("any")
+      // .isMobilePhone("any")
       .withMessage("Phone number is required"),
     body("role")
       .isIn(["student", "admin", "teacher"])
@@ -34,13 +34,13 @@ router.post(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { name, email, password, role, phoneNumber } = req.body;
+      const { name, email, password, role, phoneNumber, address } = req.body;
 
       // Check if user already exists
       const existingUser = await User.findOne({
         $or: [{ email }, { phoneNumber }],
       });
-      console.log(`Existing user: ${existingUser}`);
+
       if (existingUser)
         return res.status(400).json({ message: "User Already Registered" });
 
@@ -55,6 +55,7 @@ router.post(
         password: hashedPassword,
         role,
         phoneNumber,
+        address: address || "",
       });
       await user.save();
 

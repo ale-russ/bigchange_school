@@ -12,7 +12,6 @@ async function migrateStudents() {
     console.log("MongoDB connected");
 
     const students = await User.find({ role: "student" });
-    console.log(`Found ${students.length} students to migrate`);
 
     for (const user of students) {
       const student = new Student({
@@ -22,15 +21,11 @@ async function migrateStudents() {
       });
 
       await student.save;
-      console.log(`Migrated student: ${user.phoneNumber}`);
     }
     await User.deleteMany({ role: "student" });
-    console.log("Deleted student records from users collection");
 
-    console.log("Migration completed");
     process.exit(0);
   } catch (err) {
-    console.log("Migration Failed");
     process.exit(1);
   }
 }

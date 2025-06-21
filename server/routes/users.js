@@ -6,25 +6,6 @@ const User = require("../models/UserModel");
 
 const router = express.Router();
 
-// Get all users (admin only)
-// router.get(
-//   "/",
-//   [authMiddleware, roleMiddleware(["admin"])],
-//   async (req, res, next) => {
-//     try {
-//       const { role } = req.query;
-//       let query = {};
-//       if (role) {
-//         const roles = role.split(",").map((r) => r.trim());
-//         query = { role: { $in: roles } };
-//       }
-//       const users = await User.find(query).select("-password");
-//       res.status(200).json(users);
-//     } catch (error) {
-//       next(error);
-//     }
-//   }
-// );
 router.get(
   "/",
   [authMiddleware, roleMiddleware(["admin"])],
@@ -40,6 +21,7 @@ router.get(
         role: user.role,
         phoneNumber: user.phoneNumber,
         address: user.address,
+        classes: user.classes,
       }));
       res.status(200).json(formattedUsers);
     } catch (err) {

@@ -12,24 +12,28 @@ const router = express.Router();
 // Get all classes (admin or teacher)
 router.get(
   "/",
-  [authMiddleware, roleMiddleware(["admin"])],
+  [authMiddleware, roleMiddleware(["admin", "teacher"])],
   async (req, res, next) => {
     try {
       const classes = await ClassModel.find()
         .populate("teacherId", "name email phoneNumber role")
         .populate("studentIds", "name phoneNumber address level");
+
       const formattedClasses = classes.map((cls) => ({
         id: cls._id.toString(),
         name: cls.name,
         level: cls.level,
-        teacherId: cls.teacherId._id.toString(),
-        teacher: {
-          id: cls.teacherId._id.toString(),
-          name: cls.teacherId.name,
-          email: cls.teacherId.email,
-          phoneNumber: cls.teacherId.phoneNumber,
-        },
-        studentIds: cls.studentIds.map((s) => s._id.toString()),
+        classes: cls?.classes ?? [],
+        // teacherId: cls.teacherId ? cls.teacherId._id.toString() : null,
+        teacher: cls.teacherId
+          ? {
+              id: cls.teacherId._id.toString(),
+              name: cls.teacherId.name,
+              email: cls.teacherId.email,
+              phoneNumber: cls.teacherId.phoneNumber,
+            }
+          : null,
+        // studentIds: cls.studentIds.map((s) => s._id.toString()),
         students: cls.studentIds.map((s) => ({
           id: s._id.toString(),
           name: s.name,
@@ -50,19 +54,29 @@ router.post(
   "/",
   [authMiddleware, roleMiddleware(["admin", "teacher"])],
   async (req, res, next) => {
-    console.log("in create class route", req.body);
     try {
-      const { name, teacherId, studentIds } = req.body;
+      const { name, teacherId, studentIds, level } = req.body;
 
-      if (!name || !teacherId)
+      if (!name)
         return res
           .status(400)
-          .json({ message: "Name of the class and teacher are required" });
+          .json({ message: "Name of the class is required" });
 
-      const teacher = await User.findOne({ _id: teacherId, role: "teacher" });
-      console.log("TEacher: ", teacher);
-      if (!teacher)
-        return res.status(400).json({ message: "Teacher not found" });
+      let teacher = null;
+      let teacherIdValue = null;
+      if (teacherId) {
+        const teacher = await User.findOne({ _id: teacherId, role: "teacher" });
+
+        if (!teacher)
+          return res.status(400).json({ message: "Teacher not found" });
+
+        teacherIdValue = teacher._id;
+        teacher.classes = teacher.classes || [];
+        if (!teacher.classes.includes(teacherIdValue)) {
+          teacher.classes.push(teacherIdValue);
+          await teacher.save();
+        }
+      }
 
       const students = studentIds?.length
         ? await Student.find({ _id: { $in: studentIds } })
@@ -75,9 +89,10 @@ router.post(
 
       const newClass = new ClassModel({
         name,
-        teacher: teacher,
-        teacherId: teacher._id,
+        teacher: teacher || {},
+        teacherId: teacherIdValue,
         students: studentIds || [],
+        level: level,
       });
 
       await newClass.save();
@@ -97,12 +112,15 @@ router.post(
       res.status(200).json({
         id: populatedClass._id.toString(),
         name: populatedClass.name,
-        teacher: {
-          id: populatedClass.teacherId._id.toString(),
-          name: populatedClass.teacherId.name,
-          email: populatedClass.teacherId.email,
-          phoneNumber: populatedClass.teacherId.phoneNumber,
-        },
+        level: populatedClass.level,
+        teacher: populatedClass.teacherId
+          ? {
+              id: populatedClass.teacherId._id.toString(),
+              name: populatedClass.teacherId.name,
+              email: populatedClass.teacherId.email,
+              phoneNumber: populatedClass.teacherId.phoneNumber,
+            }
+          : null,
         students: populatedClass.studentIds?.map((student) => ({
           id: student._id.toString(),
           name: student.name,
@@ -130,13 +148,41 @@ router.put(
   async (req, res, next) => {
     try {
       const { id } = req.params;
-      console.log("id: ", id);
       const { name, teacherId, studentIds, level } = req.body;
-      console.log("body: ", name, teacherId, studentIds, level);
+
+      // Get the existing class to check previous teacher
+      const existingClass = await ClassModel.findById(id);
+      if (!existingClass)
+        return res.status(404).json({ message: "Class not found" });
 
       const teacher = await User.findOne({ _id: teacherId, role: "teacher" });
+
       if (!teacher)
         return res.status(400).json({ message: "No teacher found" });
+
+      // Update teacher's classes array
+      teacher.classes = teacher.classes || [];
+      if (
+        !teacher.classes.includes(id) &&
+        teacherId !== existingClass.teacherId?.toString()
+      ) {
+        teacher.classes.push(id);
+        await teacher.save();
+      }
+
+      // Remove class from previous teacher's classes if teacher changed
+      if (
+        existingClass.teacherId &&
+        (!teacherId || teacherId !== existingClass.teacherId.toString())
+      ) {
+        const previousTeacher = await User.findById(existingClass.teacherId);
+        if (previousTeacher) {
+          previousTeacher.classes = previousTeacher.classes.filter(
+            (classId) => classId.toString() !== id
+          );
+          await previousTeacher.save();
+        }
+      }
 
       const students = studentIds?.length
         ? await Student.find({ _id: { $in: studentIds } })
@@ -149,7 +195,7 @@ router.put(
 
       const updatedClass = await ClassModel.findByIdAndUpdate(
         id,
-        { name, teacher: teacherId, students: students, level: level || [] },
+        { name, teacherId, students: students, level: level || [] },
         { new: true }
       )
         .populate("teacherId", "name email phoneNumber")
@@ -169,10 +215,14 @@ router.put(
         name: updatedClass.name,
         level: updatedClass.level,
         teacher: {
-          id: updatedClass.teacherId._id.toString(),
-          name: updatedClass.teacherId.name,
-          email: updatedClass.teacherId.email,
-          phoneNumber: updatedClass.teacherId.phoneNumber,
+          id: updatedClass?.teacherId
+            ? updatedClass?.teacherId?._id.toString()
+            : null,
+          name: updatedClass?.teacherId ? updatedClass?.teacherId?.name : null,
+          email: updatedClass?.teacherId ? updatedClass.teacherId.email : null,
+          phoneNumber: updatedClass?.teacherId
+            ? updatedClass.teacherId.phoneNumber
+            : null,
         },
         students: updatedClass.studentIds.map((student) => ({
           id: student._id.toString(),

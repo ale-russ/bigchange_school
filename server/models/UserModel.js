@@ -30,6 +30,11 @@ const userSchema = new mongoose.Schema({
     unique: true,
     trim: true,
   },
+  classes: {
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: "Class",
+    default: [],
+  },
   address: {
     type: String,
     trim: true,

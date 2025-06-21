@@ -5,7 +5,7 @@ const classSchema = new mongoose.Schema({
   teacherId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
-    required: true,
+    // required: true,
   },
   studentIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Student" }],
   level: {
